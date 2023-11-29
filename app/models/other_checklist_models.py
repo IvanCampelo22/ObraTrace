@@ -1,0 +1,18 @@
+from sqlalchemy import Column, Integer, String, DateTime,Boolean, ForeignKey
+from sqlalchemy.orm import relationship
+from database.conn import Base
+import datetime
+
+class OtherCheckList(Base):
+    __tablename__ = 'OtherCheckList'
+
+    id = Column(Integer, primary_key=True, nullable=True)
+    employee_id = Column(Integer, ForeignKey('Emplooyes.id'), nullable=False)
+    equipment = Column(String, nullable=True)
+    file_budget = Column(String, nullable=True)
+    update_at = Column(DateTime, default=datetime.datetime.now())
+    created_at = Column(DateTime, default=datetime.datetime.now())
+    is_active = Column(Boolean, default=True)
+
+    employee = relationship('Emplooyes', back_populates='other_checklist')
+    os_construction = relationship('OsContructions', back_populates='other_checklist')
