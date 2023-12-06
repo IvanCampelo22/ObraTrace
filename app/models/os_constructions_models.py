@@ -19,6 +19,7 @@ class OsConstructions(Base):
     end_date = Column(DateTime, nullable=True)
     info = Column(String, nullable=True)
     solution = Column(String, nullable=True)
+    sale = Column(String, nullable=True)
     signature_emplooye = Column(String(120), nullable=True)
     signature_client = Column(String(120), nullable=True)
     update_at = Column(DateTime, default=datetime.datetime.now())
@@ -29,4 +30,7 @@ class OsConstructions(Base):
     client = relationship('Client', back_populates='os_construction')
     construction = relationship('Constructions', back_populates='os_construction')
     other_checklist = relationship('OtherCheckList', back_populates='os_construction')
+    checklist_cam = relationship('CheckListCam', back_populates='os_construction')
+    checklist_auto = relationship('CheckListAuto', back_populates='os_construction')
+    checklist_sound = relationship('CheckListSound', back_populates='os_construction')
     

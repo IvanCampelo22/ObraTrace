@@ -16,8 +16,12 @@ class Employees(Base):
 
     client_adress = relationship('ClientAdress', back_populates='employee') 
     os_construction = relationship('OsConstructions', back_populates='employee')
+    os_maintenance = relationship('OsMaintenance', back_populates='employee')
     construction = relationship('Construction', back_populates='employee')
     other_checklist = relationship('OtherCheckList', back_populates='employee')
+    checklist_cam = relationship('CheckListCam', back_populates='employee')
+    checklist_auto = relationship('CheckListAuto', back_populates='employee')
+    checklist_sound = relationship('CheckListSound', back_populates='employee')
 
 class TokenTableEmployees(Base):
     __tablename__ = "TokenTableEmployees"
