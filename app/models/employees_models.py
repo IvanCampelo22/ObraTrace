@@ -4,7 +4,7 @@ from database.conn import Base
 import datetime
 
 class Employees(Base):
-    __tablename__ = 'Client'
+    __tablename__ = 'Employees'
     id = Column(Integer, primary_key=True)
     username = Column(String(50),  nullable=False)
     email = Column(String(100), unique=True, nullable=False)
@@ -14,14 +14,14 @@ class Employees(Base):
     created_at = Column(DateTime, default=datetime.datetime.now())
     is_active = Column(Boolean, default=True)
 
-    client_adress = relationship('ClientAdress', back_populates='employee') 
-    os_construction = relationship('OsConstructions', back_populates='employee')
-    os_maintenance = relationship('OsMaintenance', back_populates='employee')
-    construction = relationship('Construction', back_populates='employee')
-    other_checklist = relationship('OtherCheckList', back_populates='employee')
-    checklist_cam = relationship('CheckListCam', back_populates='employee')
-    checklist_auto = relationship('CheckListAuto', back_populates='employee')
-    checklist_sound = relationship('CheckListSound', back_populates='employee')
+    client_adress = relationship('ClientAdress', back_populates='employee_id') 
+    os_construction = relationship('OsConstructions', back_populates='employee_id')
+    os_maintenance = relationship('OsMaintenance', back_populates='employee_id')
+    construction = relationship('Construction', back_populates='employee_id')
+    other_checklist = relationship('OtherCheckList', back_populates='employee_id')
+    checklist_cam = relationship('CheckListCam', back_populates='employee_id')
+    checklist_auto = relationship('CheckListAuto', back_populates='employee_id')
+    checklist_sound = relationship('CheckListSound', back_populates='employee_id')
 
 class TokenTableEmployees(Base):
     __tablename__ = "TokenTableEmployees"

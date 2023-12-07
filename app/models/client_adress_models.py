@@ -8,7 +8,7 @@ class ClientAdress(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     client_id = Column(Integer, ForeignKey('Client.id'), nullable=False)
-    employees_id = Column(Integer, ForeignKey('Employees.id'), nullable=False)
+    employee_id = Column(Integer, ForeignKey('Employees.id'), nullable=False)
     adress = Column(String(140), nullable=False)
     number = Column(String(20), nullable=False)
     city = Column(String(120), nullable=False)
@@ -19,5 +19,6 @@ class ClientAdress(Base):
     updated_at = Column(DateTime, default=datetime.now())
     created_at = Column(DateTime, default=datetime.now())
 
-    client = relationship('Client', back_populates='client_adress')
-    employee = relationship('Employees', back_populates='client_adress')
+    client_id = relationship('Client', back_populates='client_adress')
+    employee_id = relationship('Employees', back_populates='client_adress')
+    construction = relationship('Construction',back_populates='client_adress_id')

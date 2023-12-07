@@ -13,13 +13,13 @@ class Client(Base):
     created_at = Column(DateTime, default=datetime.datetime.now())
     is_active = Column(Boolean, default=True)
 
-    client_adress = relationship('ClientAdress', back_populates='client')
-    os_construction = relationship('OsConstructions', back_populates='client')
-    os_maintenance = relationship('OsMaintenance', back_populates='client')
+    client_adress = relationship('ClientAdress', back_populates='client_id')
+    os_construction = relationship('OsConstructions', back_populates='client_id')
+    os_maintenance = relationship('OsMaintenance', back_populates='client_id')
 
 
 class TokenTableClient(Base):
-    __tablename__ = "TokenTable"
+    __tablename__ = "TokenTableClient"
     user_id = Column(Integer)
     access_toke = Column(String(450), primary_key=True)
     refresh_toke = Column(String(450),nullable=False)

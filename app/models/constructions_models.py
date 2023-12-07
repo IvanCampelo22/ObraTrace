@@ -7,7 +7,7 @@ class Constructions(Base):
     __tablename__ = 'Constructions'
 
     id = Column(Integer, primary_key=True, index=True)
-    employees_id = Column(Integer, ForeignKey('Employees.id'), nullable=False)
+    employee_id = Column(Integer, ForeignKey('Employees.id'), nullable=False)
     client_id = Column(Integer, ForeignKey('Client.id'), nullable=False)
     client_adress_id = Column(Integer, ForeignKey('ClientAdress.id'), nullable=False)
     updated_at = Column(DateTime, default=datetime.datetime.now())
@@ -15,6 +15,7 @@ class Constructions(Base):
     is_done = Column(Boolean, default=False)
 
     os_construction = relationship('OsConstructions', back_populates='construction')
-    client = relationship('Client', back_populates='construction')
-    employee = relationship('Employees', back_populates='construction')
+    client_adress_id = relationship('ClientAdress', back_populates='construction')
+    client_id = relationship('Client', back_populates='construction')
+    employee_id = relationship('Employees', back_populates='construction')
     

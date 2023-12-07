@@ -18,6 +18,6 @@ class CheckListSound(Base):
     update_at = Column(DateTime, default=datetime.now())
     created_at = Column(DateTime, default=datetime.now())
 
-    employee = relationship('Employees', back_populates='checklist_cam')
-    os_construction = relationship('OsContructions', back_populates='checklist_sound')
-    os_maintenance = relationship('OsMaintenance', back_populates='checklist_sound')
+    employee_id = relationship('Employees', back_populates='checklist_cam')
+    os_construction = relationship('OsContructions', back_populates='checklist_sound_id')
+    os_maintenance = relationship('OsMaintenance', back_populates='checklist_sound_id')
