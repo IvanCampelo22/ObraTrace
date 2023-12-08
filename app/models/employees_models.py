@@ -20,7 +20,7 @@ class Employees(Base):
     construction = relationship('Construction', back_populates='employee_id')
     other_checklist = relationship('OtherCheckList', back_populates='employee_id')
     checklist_cam = relationship('CheckListCam', back_populates='employee_id')
-    checklist_auto = relationship('CheckListAuto', back_populates='employee_id')
+    checklist_auto = relationship('CheckListAuto', back_populates='employee')  # Renomeado para evitar conflito com 'checklist_auto'
     checklist_sound = relationship('CheckListSound', back_populates='employee_id')
 
 class TokenTableEmployees(Base):

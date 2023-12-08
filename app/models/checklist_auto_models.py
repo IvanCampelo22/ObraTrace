@@ -19,6 +19,6 @@ class CheckListAuto(Base):
     update_at = Column(DateTime, default=datetime.now())
     created_at = Column(DateTime, default=datetime.now())
 
-    employee_id = relationship('Employees', back_populates='checklist_auto')
-    os_construction = relationship('OsContructions', back_populates='checklist_auto_id')
-    os_maintenance = relationship('OsMaintenance', back_populates='checklist_auto_id')
+    employee = relationship('Employees', back_populates='checklist_auto')
+    os_construction = relationship('OsConstructions', back_populates='checklist_auto')  # Corrigido para 'OsConstructions' (plural)
+    os_maintenance = relationship('OsMaintenance', back_populates='checklist_auto')

@@ -9,6 +9,7 @@ class OsMaintenance(Base):
     id = Column(Integer, primary_key=True, index=True)
     employee_id = Column(Integer, ForeignKey('Employees.id'), nullable=False)
     client_id = Column(Integer, ForeignKey('Client.id'), nullable=False)
+    client_adress_id = Column(Integer, ForeignKey('ClientAdress.id'), nullable=False)
     checklist_cam_id = Column(Integer, ForeignKey('CheckListCam.id'), nullable=True)
     checklist_auto_id = Column(Integer, ForeignKey('CheckListAuto.id'), nullable=True)
     checklist_sound_id = Column(Integer, ForeignKey('CheckListSound.id'), nullable=True)
@@ -27,6 +28,7 @@ class OsMaintenance(Base):
 
     employee_id = relationship('Employees', back_populates='os_maintenance')
     client_id = relationship('Client', back_populates='os_maintenance')
+    client_adress_id = relationship('ClientAdress', back_populates='construction')
     other_checklist_id = relationship('OtherCheckList', back_populates='os_maintenance')
     checklist_cam_id = relationship('CheckListCam', back_populates='os_maintenance')
     checklist_auto_id = relationship('CheckListAuto', back_populates='os_maintenance')

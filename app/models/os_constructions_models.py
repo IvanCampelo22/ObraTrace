@@ -13,7 +13,7 @@ class OsConstructions(Base):
     checklist_cam_id = Column(Integer, ForeignKey('CheckListCam.id'), nullable=True)
     checklist_auto_id = Column(Integer, ForeignKey('CheckListAuto.id'), nullable=True)
     checklist_sound_id = Column(Integer, ForeignKey('CheckListSound.id'), nullable=True)
-    other_checklist_id  = Column(Integer, ForeignKey('OtherCheckList'), nullable=True)
+    other_checklist_id  = Column(Integer, ForeignKey('OtherCheckList.id'), nullable=True)
     image = Column(String, nullable=True)
     scheduling = Column(DateTime, nullable=True)
     end_date = Column(DateTime, nullable=True)
@@ -26,11 +26,10 @@ class OsConstructions(Base):
     created_at = Column(DateTime, default=datetime.datetime.now())
     is_active = Column(Boolean, default=True)
 
-    employee_id = relationship('Employees', back_populates='os_construction')
+    employee_id = relationship('Employees', back_populates='os_construction')  # Renomeado para evitar conflito com 'employee_id'
     client_id = relationship('Client', back_populates='os_construction')
     construction_id = relationship('Constructions', back_populates='os_construction')
     other_checklist_id = relationship('OtherCheckList', back_populates='os_construction')
     checklist_cam_id = relationship('CheckListCam', back_populates='os_construction')
-    checklist_auto_id = relationship('CheckListAuto', back_populates='os_construction')
+    checklist_auto = relationship('CheckListAuto', back_populates='os_construction')
     checklist_sound_id = relationship('CheckListSound', back_populates='os_construction')
-    

@@ -21,5 +21,5 @@ class CheckListCam(Base):
     created_at = Column(DateTime, default=datetime.now())
 
     employee_id = relationship('Employees', back_populates='checklist_cam')
-    os_construction = relationship('OsContructions', back_populates='checklist_cam_id')
+    os_construction = relationship('OsConstructions', back_populates='checklist_cam_id')
     os_maintenance = relationship('OsMaintenance', back_populates='checklist_cam_id')
