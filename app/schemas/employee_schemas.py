@@ -1,16 +1,23 @@
 from pydantic import BaseModel
 import datetime
+from enum import Enum
 
-class ClientCreate(BaseModel):
+class WorkTypeEnum(str, Enum):
+    Comercial = "Comercial"
+    Técnico = "Técnico"
+
+
+class EmployeeCreate(BaseModel):
     username: str
     email: str
     password: str
+    work_type: WorkTypeEnum
 
 class requestdetails(BaseModel):
     email:str
     password:str
         
-class TokenClientSchema(BaseModel):
+class TokenEmployeeSchema(BaseModel):
     access_token: str
     refresh_token: str
 
@@ -19,7 +26,7 @@ class changepassword(BaseModel):
     old_password:str
     new_password:str
 
-class TokenClientCreate(BaseModel):
+class TokenEmployeeCreate(BaseModel):
     user_id:str
     access_token:str
     refresh_token:str

@@ -1,13 +1,13 @@
-from fastapi import APIRouter, File, UploadFile, Depends
+from fastapi import APIRouter, File, UploadFile, Depends, status
 from app.models.os_maintenance_models import OsMaintenance
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.conn import async_session
 from database import conn
 
-router = APIRouter
+router = APIRouter()
 
 @async_session
-@router.post("/uploadfile/")
+@router.post("/uploadfile/", status_code=status.HTTP_200_OK)
 async def create_upload_file(file: UploadFile = File(...), session: AsyncSession = Depends(conn.get_async_session)):
     file_location = f"some/directory/{file.filename}"
     with open(file_location, "wb+") as file_object:
