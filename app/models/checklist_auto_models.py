@@ -1,7 +1,9 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, DateTime
 from database.conn import Base 
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.schema import ForeignKey
 from datetime import datetime
+from app.models.os_constructions_models import OsConstructions
 
 class CheckListAuto(Base):
     __tablename__ = 'CheckListAuto'
@@ -20,5 +22,5 @@ class CheckListAuto(Base):
     created_at = Column(DateTime, default=datetime.now())
 
     employee = relationship('Employees', back_populates='checklist_auto')
-    os_construction = relationship('OsConstructions', back_populates='checklist_auto')  # Corrigido para 'OsConstructions' (plural)
+    os_construction = relationship('OsConstructions', back_populates='checklist_auto')  
     os_maintenance = relationship('OsMaintenance', back_populates='checklist_auto')

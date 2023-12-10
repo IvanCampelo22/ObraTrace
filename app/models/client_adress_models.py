@@ -1,4 +1,5 @@
-from sqlalchemy import Integer, String, DateTime, Column, ForeignKey
+from sqlalchemy import Integer, String, DateTime, Column
+from sqlalchemy.sql.schema import ForeignKey
 from database.conn import Base
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -19,6 +20,7 @@ class ClientAdress(Base):
     updated_at = Column(DateTime, default=datetime.now())
     created_at = Column(DateTime, default=datetime.now())
 
-    client_id = relationship('Client', back_populates='client_adress')
-    employee_id = relationship('Employees', back_populates='client_adress')
-    construction = relationship('Construction',back_populates='client_adress_id')
+    client = relationship('Client', back_populates='client_adress')
+    employee = relationship('Employees', back_populates='client_adress')
+    construction = relationship('Constructions',back_populates='client_adress')
+    os_maintenance = relationship('OsMaintenance', back_populates='client_adress')

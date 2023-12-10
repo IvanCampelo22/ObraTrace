@@ -13,9 +13,10 @@ class Client(Base):
     created_at = Column(DateTime, default=datetime.datetime.now())
     is_active = Column(Boolean, default=True)
 
-    client_adress = relationship('ClientAdress', back_populates='client_id')
-    os_construction = relationship('OsConstructions', back_populates='client_id')
-    os_maintenance = relationship('OsMaintenance', back_populates='client_id')
+    client_adress = relationship('ClientAdress', back_populates='client')
+    os_construction = relationship('OsConstructions', back_populates='client')
+    os_maintenance = relationship('OsMaintenance', back_populates='client')
+    construction = relationship('Constructions', back_populates='client')
 
 
 class TokenTableClient(Base):

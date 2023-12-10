@@ -1,7 +1,9 @@
-from sqlalchemy import Column, Integer, String, DateTime,Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime,Boolean
 from database.conn import Base
 import datetime
+from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.orm import relationship
+from app.models.client_adress_models import ClientAdress
 
 class Constructions(Base):
     __tablename__ = 'Constructions'
@@ -15,7 +17,7 @@ class Constructions(Base):
     is_done = Column(Boolean, default=False)
 
     os_construction = relationship('OsConstructions', back_populates='construction')
-    client_adress_id = relationship('ClientAdress', back_populates='construction')
-    client_id = relationship('Client', back_populates='construction')
-    employee_id = relationship('Employees', back_populates='construction')
+    client_adress = relationship('ClientAdress', back_populates='construction')
+    client = relationship('Client', back_populates='construction')
+    employee = relationship('Employees', back_populates='construction')
     
