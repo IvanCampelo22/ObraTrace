@@ -27,12 +27,12 @@ async def register_user(employee: EmployeeCreate, session: AsyncSession = Depend
 
     encrypted_password = get_hashed_password(employee.password)
 
-    new_user = Employees(username=employee.username, email=employee.email, password=encrypted_password )
+    new_user = Employees(username=employee.username, email=employee.email, password=encrypted_password, work_type=employee.work_type )
 
     session.add(new_user)
     await session.commit()
 
-    return {"message":"cliente criado com sucesso"}
+    return {"message":"funcionário criado com sucesso"}
 
 
 @router.post('/login' ,response_model=TokenEmployeeSchema)
