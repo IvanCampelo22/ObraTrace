@@ -6,12 +6,18 @@ class WorkTypeEnum(str, Enum):
     Comercial = "Comercial"
     Técnico = "Técnico"
 
-
-class EmployeeCreate(BaseModel):
-    username: str
-    email: str
+class EmployeeBase(BaseModel):
+    username: str 
+    email: str 
     password: str
     work_type: WorkTypeEnum
+
+class EmployeeCreate(EmployeeBase):
+    is_active: bool
+
+class Employee(EmployeeBase):
+    id = int 
+
 
 class requestdetails(BaseModel):
     email:str

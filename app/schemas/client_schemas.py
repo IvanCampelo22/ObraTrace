@@ -1,10 +1,17 @@
 from pydantic import BaseModel
 import datetime
 
-class ClientCreate(BaseModel):
-    username: str
-    email: str
+class ClientBase(BaseModel):
+    username: str 
+    email: str 
     password: str
+
+class ClientCreate(ClientBase):
+    is_active: bool
+
+class Client(ClientBase):
+    id: int 
+
 
 class requestdetails(BaseModel):
     email:str
