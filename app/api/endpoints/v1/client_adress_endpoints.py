@@ -1,4 +1,4 @@
-from app.schemas.client_adress_schemas import ClientAdressCreate
+from app.schemas.client_adress_schemas import ClientAdressCreate, ClientAdressUpdate
 from app.models.client_adress_models import ClientAdress
 from app.auth.auth_bearer import JWTBearer
 from app.auth.auth_handler import get_hashed_password, create_access_token,create_refresh_token,verify_password, token_client_required
@@ -20,7 +20,6 @@ async def register_user(adress: ClientAdressCreate, session: AsyncSession = Depe
         raise HTTPException(status_code=400, detail="Já temos esse endereço registrado")
     
     try: 
-
         new_adress = ClientAdress(client_id=adress.client_id, employee_id=adress.employee_id, adress=adress.adress, number=adress.number, city=adress.city, state=adress.state, name_building=adress.name_building, reference_point=adress.reference_point, complement=adress.complement)
 
         session.add(new_adress)
@@ -41,4 +40,9 @@ async def list_client_adresses(session: AsyncSession = Depends(conn.get_async_se
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
-                    
+    
+
+# @router.put('update-client-adress{adress_id}')
+# async def update_client_adress(adress_id: int = None, session: AsyncSession = Depends(conn.get_async_session)):
+#     result = await session.execute(select(ClientAdress).filter_by(ClientAdress.id))
+#     return result

@@ -18,26 +18,27 @@ router=APIRouter()
 
 @async_session
 @router.post("/create-checklist-cam")
-async def create_checlist_auto(checlistcam: CheckListCamCreate, session: AsyncSession = Depends(conn.get_async_session)):    
-    result = await session.execute(select(CheckListCam).where(CheckListCam.rele_type == checlistcam.rele_type, CheckListCam.qtd_rele == checlistcam.qtd_rele, CheckListCam.qtd_cable == checlistcam.qtd_cable, CheckListCam.switch_type == checlistcam.switch_type, CheckListCam.qtd_hub == checlistcam.qtd_hub, CheckListCam.other_equipament == checlistcam.other_equipament))
+async def create_checlist_cam(checlistcam: CheckListCamCreate, session: AsyncSession = Depends(conn.get_async_session)):    
+    result = await session.execute(select(CheckListCam).where(CheckListCam.qtd_cam == checlistcam.qtd_cam, CheckListCam.qtd_box_cable == checlistcam.qtd_box_cable, CheckListCam.qtd_rca == checlistcam.qtd_rca, CheckListCam.qtd_p4 == checlistcam.qtd_p4, CheckListCam.qtd_dvr == checlistcam.qtd_dvr, CheckListCam.qtd_hd == checlistcam.qtd_hd, CheckListCam.hds_size == checlistcam.hds_size, CheckListCam.other_equipament == checlistcam.other_equipament))
     existing_checlistcam = result.scalar()
     if existing_checlistcam: 
         return {"message": f"Já temos algo igual no nosso banco de dados {existing_checlistcam.id}"}
     try: 
-        new_checlistcam = CheckListCam(employee_id=checlistcam.employee_id, rele_type=checlistcam.rele_type, qtd_rele=checlistcam.qtd_rele, qtd_cable=checlistcam.qtd_cable, switch_type=checlistcam.switch_type, qtd_switch=checlistcam.qtd_switch, qtd_hub=checlistcam.qtd_hub, other_equipament=checlistcam.other_equipament)
+        new_checlistcam = CheckListCam(employee_id=checlistcam.employee_id, qtd_cam=checlistcam.qtd_cam, qtd_box_cable=checlistcam.qtd_box_cable, qtd_rca=checlistcam.qtd_rca, qtd_p4=checlistcam.qtd_p4, qtd_dvr=checlistcam.qtd_dvr, qtd_hd=checlistcam.qtd_hd, hds_size=checlistcam.hds_size, other_equipament=checlistcam.other_equipament)
 
         session.add(new_checlistcam)
         await session.commit()
 
-        return {"message":"Checklist para instalação de automação criado com sucesso!"}
+        return {"message":"Checklist para instalação de câmeras criado com sucesso!"}
     
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
     
 
+@async_session
 @router.get("/list-checklist-auto")
-async def list_checklist_auto(session: AsyncSession = Depends(conn.get_async_session)):
+async def list_checklist_cam(session: AsyncSession = Depends(conn.get_async_session)):
     try: 
         result = await session.execute(select(CheckListCam))
         return result.scalar()

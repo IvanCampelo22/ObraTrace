@@ -20,3 +20,13 @@ class ClientAdressCreate(ClientAdressBase):
 class ClientAdress(ClientAdressBase):
     id = int
 
+class ClientAdressUpdate(BaseModel):
+    client_id: int | None = None
+    employee_id: int | None = None
+    adress: str | None = None
+    number: str | None = None
+    city: str | None = None
+    state: str | None = None
+    name_building: str | None = None 
+    reference_point: str | None = None 
+    complement: str | None = None
