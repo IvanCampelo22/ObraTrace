@@ -31,15 +31,18 @@ async def register_os_construction(osconstruction: OsConstructionsCreate, sessio
         raise HTTPException(status_code=400, detail="Já temos essa ordem de serviço registrada")
     
     try: 
-        new_os_construction = OsConstructions(client_id=construction.client_id, employee_id=construction.employee_id, client_adress_id=construction.client_adress_id)
+        new_os_construction = OsConstructions(client_id=osconstruction.client_id, employee_id=osconstruction.employee_id, construction_id=osconstruction.construction_id, 
+                                              checklist_auto_id=osconstruction.checklist_auto_id, checklist_cam_id=osconstruction.checklist_cam_id, checklist_sound_id=osconstruction.checklist_sound_id,
+                                              other_checklist_id=osconstruction.other_checklist_id, sale=osconstruction.sale, scheduling=osconstruction.scheduling, signature_client=osconstruction.signature_client,
+                                              signature_emplooye=osconstruction.signature_emplooye, solution=osconstruction.solution, info=osconstruction.info, end_date=osconstruction.end_date)
 
         session.add(new_os_construction)
         await session.commit()
 
-        return {"message":"Obra registrada com sucesso"}
+        return {"message":"Ordem de serviço para obra criada com sucesso"}
     
     except Exception as e:
-        session.rollback()
+        await session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
     
     
@@ -49,10 +52,9 @@ async def list_os_osconstructions(session: AsyncSession = Depends(conn.get_async
         result = await session.execute(select(OsConstructions))
         return result.scalar()
     except Exception as e:
-        session.rollback()
+        await session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
 
-router = APIRouter()
 
 # @async_session
 # @router.post("/uploadfile/", status_code=status.HTTP_200_OK)

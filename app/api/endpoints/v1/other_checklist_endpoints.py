@@ -3,10 +3,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database.conn import async_session
 
 
-from app.schemas.other_checklist_schemas import OtherCheckListCreate
+from app.schemas.other_checklist_schemas import OtherCheckListCreate, OtherCheckListSchema
 from app.auth.auth_bearer import JWTBearer
 from app.auth.auth_handler import get_hashed_password, create_access_token,create_refresh_token,verify_password, token_client_required
-from fastapi import Depends, HTTPException,status, APIRouter, UploadFile, File
+from fastapi import Depends, HTTPException,status, APIRouter, UploadFile, File, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import conn
 from sqlalchemy.future import select
@@ -44,6 +44,19 @@ async def list_other_checklist(session: AsyncSession = Depends(conn.get_async_se
         session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
     
+@router.delete("/delete-other-checklist", status_code=status.HTTP_200_OK)
+async def delete_other_checklist(other_checklist_id: int = None, session: AsyncSession = Depends(conn.get_async_session)):
+    checlist_id = await session.execute(select(OtherCheckList).where(OtherCheckList.id == other_checklist_id))
+    try: 
+        if checlist_id:
+            obj_other_checklist = checlist_id.scalar_one()
+            await session.delete(obj_other_checklist)
+            await session.commit()
+            Response(status_code=200, message="checklist deletada com sucesso")
+            return {"message": "checklist deletada com sucesso"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
+
 
 @async_session
 @router.post("/uploadfile/", status_code=status.HTTP_200_OK)

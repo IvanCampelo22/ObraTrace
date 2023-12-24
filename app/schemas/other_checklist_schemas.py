@@ -8,5 +8,5 @@ class OtherCheckListCreate(OtherCheckListBase):
     equipment: str
     file_budget: str
 
-class OtherCheckList(OtherCheckListBase):
+class OtherCheckListSchema(OtherCheckListBase):
     id: int

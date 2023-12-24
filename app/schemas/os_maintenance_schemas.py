@@ -3,12 +3,12 @@ from datetime import date
 from typing import Optional
 
 
-class OsConstructionsBase(BaseModel):
+class OsMaintenanceBase(BaseModel):
     employee_id: int 
     client_id: int 
-    construction_id: int
+    client_adress_id: int
 
-class OsConstructionsCreate(OsConstructionsBase):
+class OsMaintenanceCreate(OsMaintenanceBase):
     checklist_cam_id: int
     checklist_auto_id: int
     checklist_sound_id: int
@@ -21,5 +21,5 @@ class OsConstructionsCreate(OsConstructionsBase):
     signature_emplooye: str
     signature_client: str
 
-class OsConstructions:
+class OsMaintenance:
     id: int
