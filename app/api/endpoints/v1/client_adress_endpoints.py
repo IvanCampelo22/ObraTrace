@@ -13,7 +13,7 @@ from typing import List
 router=APIRouter()
 
 @router.post("/register-client-adress")
-async def register_user(adress: ClientAdressCreate, session: AsyncSession = Depends(conn.get_async_session)):
+async def register_client_adress(adress: ClientAdressCreate, session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(ClientAdress).where(ClientAdress.adress == adress.adress, ClientAdress.city == adress.city, ClientAdress.number == adress.number, ClientAdress.state == adress.state, ClientAdress.name_building == adress.name_building, ClientAdress.reference_point == adress.reference_point, ClientAdress.complement == adress.complement))
     existing_adress = result.scalar()
     if existing_adress: 
