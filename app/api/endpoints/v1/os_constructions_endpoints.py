@@ -6,7 +6,7 @@ from database import conn
 
 from app.schemas.os_constructions_schemas import OsConstructionsCreate
 from app.auth.auth_bearer import JWTBearer
-from app.auth.auth_handler import get_hashed_password, create_access_token,create_refresh_token,verify_password, token_client_required
+from app.auth.auth_handler import get_hashed_password, create_access_token,create_refresh_token,verify_password, token_client_required, token_employee_required
 from fastapi import Depends, HTTPException,status, APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import conn
@@ -17,8 +17,11 @@ from typing import List
 
 router=APIRouter()
 
-@router.post("/register-os-construction")
-async def register_os_construction(osconstruction: OsConstructionsCreate, session: AsyncSession = Depends(conn.get_async_session)):
+
+@token_employee_required
+@async_session
+@router.post("/register-os-construction", status_code=status.HTTP_201_CREATED)
+async def register_os_construction(osconstruction: OsConstructionsCreate, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(OsConstructions).where(OsConstructions.client_id == osconstruction.client_id, OsConstructions.employee_id == osconstruction.employee_id, 
                                                                  OsConstructions.construction_id == osconstruction.construction_id, OsConstructions.checklist_auto_id == osconstruction.checklist_auto_id, 
                                                                  OsConstructions.checklist_cam_id == osconstruction.checklist_cam_id, OsConstructions.checklist_sound_id == osconstruction.checklist_sound_id, 
@@ -45,15 +48,45 @@ async def register_os_construction(osconstruction: OsConstructionsCreate, sessio
         await session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
     
-    
+
+@token_employee_required
+@async_session
 @router.get("/list-os-construction")
-async def list_os_osconstructions(session: AsyncSession = Depends(conn.get_async_session)):
+async def list_os_osconstructions(dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
-        result = await session.execute(select(OsConstructions))
-        return result.scalar()
+        obj = await session.execute(select(OsConstructions))
+        return obj.scalar()
     except Exception as e:
         await session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
+    
+
+@token_employee_required
+@async_session
+@router.get("/get-one-os-constructions", status_code=status.HTTP_200_OK)
+async def get_one_os_constructions(dependencies=Depends(JWTBearer()), os_construction_id: int = None, session: AsyncSession = Depends(conn.get_async_session)):
+    os_constructions_id = await session.execute(select(OsConstructions).where(OsConstructions.id == os_construction_id))
+    try: 
+        if os_constructions_id:
+            obj_os_construction = os_constructions_id.scalar_one()
+            return obj_os_construction
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
+    
+
+@token_employee_required
+@async_session
+@router.delete("/delete-os-constructions", status_code=status.HTTP_200_OK)
+async def delete_os_constructions(dependencies=Depends(JWTBearer()), os_constructions_id: int = None, session: AsyncSession = Depends(conn.get_async_session)):
+    constructions_id = await session.execute(select(OsConstructions).where(OsConstructions.id == os_constructions_id))
+    try: 
+        if constructions_id:
+            obj_os_constructions = constructions_id.scalar_one()
+            await session.delete(obj_os_constructions)
+            await session.commit()
+            return {"message": "Ordem de Serviço deletada com sucesso"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
 
 
 # @async_session

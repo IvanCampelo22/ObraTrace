@@ -6,7 +6,7 @@ from database import conn
 
 from app.schemas.os_maintenance_schemas import OsMaintenanceCreate
 from app.auth.auth_bearer import JWTBearer
-from app.auth.auth_handler import get_hashed_password, create_access_token,create_refresh_token,verify_password, token_client_required
+from app.auth.auth_handler import get_hashed_password, create_access_token,create_refresh_token,verify_password, token_client_required, token_employee_required
 from fastapi import Depends, HTTPException,status, APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import conn
@@ -17,8 +17,11 @@ from typing import List
 
 router=APIRouter()
 
-@router.post("/register-os-maintenance")
-async def register_os_maintenance(osmaintenance: OsMaintenanceCreate, session: AsyncSession = Depends(conn.get_async_session)):
+
+@token_employee_required
+@async_session
+@router.post("/register-os-maintenance", status_code=status.HTTP_201_CREATED)
+async def register_os_maintenance(osmaintenance: OsMaintenanceCreate, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(OsMaintenance).where(OsMaintenance.client_id == osmaintenance.client_id, OsMaintenance.employee_id == osmaintenance.employee_id, 
                                                                  OsMaintenance.client_adress_id == osmaintenance.client_adress_id, OsMaintenance.checklist_auto_id == osmaintenance.checklist_auto_id, 
                                                                  OsMaintenance.checklist_cam_id == osmaintenance.checklist_cam_id, OsMaintenance.checklist_sound_id == osmaintenance.checklist_sound_id, 
@@ -45,8 +48,10 @@ async def register_os_maintenance(osmaintenance: OsMaintenanceCreate, session: A
         await session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
     
-    
-@router.get("/list-os-maintenance")
+
+@token_employee_required
+@async_session
+@router.get("/list-os-maintenance", status_code=status.HTTP_200_OK)
 async def list_os_osconstructions(session: AsyncSession = Depends(conn.get_async_session)):
     try: 
         result = await session.execute(select(OsMaintenance))
@@ -54,6 +59,34 @@ async def list_os_osconstructions(session: AsyncSession = Depends(conn.get_async
     except Exception as e:
         await session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
+    
+
+@token_employee_required
+@async_session
+@router.get("/get-one-os-maintenance", status_code=status.HTTP_200_OK)
+async def get_one_os_maintenance(os_maintenance_id: int = None, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+    maintenance_id = await session.execute(select(OsMaintenance).where(OsMaintenance.id == os_maintenance_id))
+    try: 
+        if maintenance_id:
+            obj_os_construction = maintenance_id.scalar_one()
+            return obj_os_construction
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
+    
+
+@token_employee_required
+@async_session
+@router.delete("/delete-os-maintenance", status_code=status.HTTP_200_OK)
+async def delete_other_checklist(os_maintenance_id: int = None, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+    maintenance_id = await session.execute(select(OsMaintenance).where(OsMaintenance.id == os_maintenance_id))
+    try: 
+        if maintenance_id:
+            obj_os_maintenance = maintenance_id.scalar_one()
+            await session.delete(obj_os_maintenance)
+            await session.commit()
+            return {"message": "Ordem de Serviço deletada com sucesso"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
 
 
 # @async_session

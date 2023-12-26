@@ -6,7 +6,7 @@ from database import conn
 
 from app.schemas.checlist_sound_schemas import CheckListSoundCreate
 from app.auth.auth_bearer import JWTBearer
-from app.auth.auth_handler import get_hashed_password, create_access_token,create_refresh_token,verify_password, token_client_required
+from app.auth.auth_handler import get_hashed_password, create_access_token,create_refresh_token,verify_password, token_client_required, token_employee_required
 from fastapi import Depends, HTTPException,status, APIRouter, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import conn
@@ -16,9 +16,10 @@ from datetime import datetime
 
 router=APIRouter()
 
+@token_employee_required
 @async_session
-@router.post("/create-checklist-sound")
-async def create_checlist_sound(checlistsound: CheckListSoundCreate, session: AsyncSession = Depends(conn.get_async_session)):    
+@router.post("/create-checklist-sound", status_code=status.HTTP_201_CREATED)
+async def create_checlist_sound(checlistsound: CheckListSoundCreate, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):    
 
     result = await session.execute(select(CheckListSound).where(CheckListSound.qtd_sound_box == checlistsound.qtd_sound_box, CheckListSound.qtd_cable == checlistsound.qtd_cable, CheckListSound.qtd_conn == checlistsound.qtd_conn, CheckListSound.qtd_ampli == checlistsound.qtd_ampli, CheckListSound.qtd_receiver == checlistsound.qtd_receiver,  CheckListSound.other_equipament == checlistsound.other_equipament))
     existing_checlistsound = result.scalar()
@@ -38,15 +39,44 @@ async def create_checlist_sound(checlistsound: CheckListSoundCreate, session: As
         raise HTTPException(status_code=500, detail=f'{e}')
     
 
+@token_employee_required
 @async_session
-@router.get("/list-checklist-sound")
-async def list_checklist_sound(session: AsyncSession = Depends(conn.get_async_session)):
+@router.get("/list-checklist-sound", status_code=status.HTTP_200_OK)
+async def list_checklist_sound(dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
         result = await session.execute(select(CheckListSound))
         return result.scalar()
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
+    
+
+@token_employee_required
+@async_session
+@router.get("/get-one-checklist-sound", status_code=status.HTTP_200_OK)
+async def get_one_checklist_sound(checklist_sound_id: int = None, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+    checklist_id = await session.execute(select(CheckListSound).where(CheckListSound.id == checklist_sound_id))
+    try: 
+        if checklist_id:
+            obj_checklist = checklist_id.scalar_one()
+            return obj_checklist
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
+    
+
+@token_employee_required
+@async_session
+@router.delete("/delete-checklist-sound", status_code=status.HTTP_200_OK)
+async def delete_checklist_sound(checklist_sound_id: int = None, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+    checklist_id = await session.execute(select(CheckListSound).where(CheckListSound.id == checklist_sound_id))
+    try: 
+        if checklist_id:
+            obj_checklist = checklist_id.scalar_one()
+            await session.delete(obj_checklist)
+            await session.commit()
+            return {"message": "Checklist deletado com sucesso"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
 
 
 # @async_session

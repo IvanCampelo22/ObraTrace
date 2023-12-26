@@ -5,6 +5,7 @@ from app.auth.auth_handler import get_hashed_password, create_access_token,creat
 from fastapi import Depends, HTTPException,status, APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import conn
+from database.conn import async_session
 from sqlalchemy.future import select
 from jose import jwt
 from datetime import datetime
@@ -125,3 +126,36 @@ async def logout(dependencies=Depends(JWTBearer()), session: AsyncSession = Depe
         await session.refresh(existing_token)
 
     return {"message": "Logout realizado com sucesso"}
+
+
+@token_employee_required
+@async_session
+@router.get('/get-employees', status_code=status.HTTP_200_OK)
+async def list_users(is_activate: bool = None, is_deactivate: bool = None, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+    employee_is_activate = await session.execute(select(Employees).where(Employees.is_active == True))
+    employee_is_deactivate = await session.execute(select(Employees).where(Employees.is_active == False))
+    result = await session.execute(select(Employees))
+    try:
+        if is_activate == True:
+            return employee_is_activate.scalar()
+        elif is_deactivate == True:
+            return employee_is_deactivate.scalar()
+        else: 
+            return result.scalar()
+
+    except Exception as e:
+        HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
+
+
+@token_employee_required
+@async_session
+@router.delete('/deactivate-employee', status_code=status.HTTP_200_OK)
+async def deactivate_employee(employee_id: int = None, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+    employee = await session.execute(select(Employees).where(Employees.id == employee_id))
+    try: 
+        if employee:
+            obj_employee = employee.scalar_one()
+            obj_employee.is_active = False
+            return {"message": "funcionário desativado"}
+    except Exception as e:
+        HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
