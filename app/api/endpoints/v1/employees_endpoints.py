@@ -1,16 +1,20 @@
-from app.schemas.employee_schemas import EmployeeCreate, TokenEmployeeSchema, requestdetails, changepassword
-from app.models.employees_models import Employees, TokenTableEmployees
-from app.auth.auth_bearer_employee import JWTBearerEmployee
-from app.auth.auth_handle_employee import token_employee_required
-from app.auth.auth_handle_client import get_hashed_password, create_access_token,create_refresh_token,verify_password
 from fastapi import Depends, HTTPException,status, APIRouter
+
 from sqlalchemy.ext.asyncio import AsyncSession
-from database import conn
-from database.conn import async_session
 from sqlalchemy.future import select
+
 from jose import jwt
 from datetime import datetime
 from typing import List
+
+from app.schemas.employee_schemas import EmployeeCreate, TokenEmployeeSchema, requestdetails, changepassword
+from app.models.employees_models import Employees, TokenTableEmployees
+from app.auth.auth_bearer_employee import JWTBearerEmployee
+from app.auth.auth_handle import token_employee_required
+from app.auth.auth_handle import get_hashed_password, create_access_token,create_refresh_token,verify_password
+from database import conn
+from database.conn import async_session
+
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 30 
 REFRESH_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 
@@ -18,7 +22,9 @@ ALGORITHM = "HS256"
 JWT_SECRET_KEY = "narscbjim@$@&^@&%^&RFghgjvbdsha"
 JWT_REFRESH_SECRET_KEY = "13ugfdfgh@#$%^@&jkl45678902"
 
-router=APIRouter()
+
+router = APIRouter()
+
 
 @router.post("/register")
 async def register_user(employee: EmployeeCreate, session: AsyncSession = Depends(conn.get_async_session)):

@@ -1,18 +1,16 @@
-from fastapi import APIRouter, File, UploadFile, Depends, status
-from app.models.checklist_cam_models import CheckListCam
+from fastapi import APIRouter, File, UploadFile, Depends, status, HTTPException
+
 from sqlalchemy.ext.asyncio import AsyncSession
-from database.conn import async_session
-from database import conn
+from sqlalchemy.future import select
 
 from app.schemas.checlist_cam_schemas import CheckListCamCreate
+from app.models.checklist_cam_models import CheckListCam
 from app.auth.auth_bearer_employee import JWTBearerEmployee
-from app.auth.auth_handle_employee import token_employee_required
-from fastapi import Depends, HTTPException,status, APIRouter, UploadFile, File
-from sqlalchemy.ext.asyncio import AsyncSession
+from app.auth.auth_handle import token_employee_required
 from database import conn
-from sqlalchemy.future import select
-from jose import jwt
-from datetime import datetime
+from database.conn import async_session
+
+
 
 router=APIRouter()
 

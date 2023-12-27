@@ -1,15 +1,19 @@
-from app.schemas.client_schemas import ClientCreate, TokenClientSchema, requestdetails, changepassword
-from app.models.client_models import Client, TokenTableClient
-from app.auth.auth_bearer_client import JWTBearerClient
-from app.auth.auth_handle_client import get_hashed_password, create_access_token,create_refresh_token,verify_password, token_client_required
 from fastapi import Depends, HTTPException,status, APIRouter
+
 from sqlalchemy.ext.asyncio import AsyncSession
-from database import conn
-from database.conn import async_session
 from sqlalchemy.future import select
+
 from jose import jwt
 from datetime import datetime
 from typing import List
+
+from app.schemas.client_schemas import ClientCreate, TokenClientSchema, requestdetails, changepassword
+from app.models.client_models import Client, TokenTableClient
+from app.auth.auth_bearer_client import JWTBearerClient
+from app.auth.auth_handle import get_hashed_password, create_access_token,create_refresh_token,verify_password, token_client_required
+from database import conn
+from database.conn import async_session
+
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 30 
 REFRESH_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 
@@ -17,8 +21,10 @@ ALGORITHM = "HS256"
 JWT_SECRET_KEY = "narscbjim@$@&^@&%^&RFghgjvbdsha"
 JWT_REFRESH_SECRET_KEY = "13ugfdfgh@#$%^@&jkl45678902"
 
-router=APIRouter()
 
+router = APIRouter()
+
+ 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register_user(client: ClientCreate, session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(Client).where(Client.email == client.email))

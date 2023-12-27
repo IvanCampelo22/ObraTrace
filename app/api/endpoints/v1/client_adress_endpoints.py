@@ -1,18 +1,18 @@
-from app.schemas.client_adress_schemas import ClientAdressCreate, ClientAdressUpdate
+from fastapi import Depends, HTTPException,status, APIRouter
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+
+from app.schemas.client_adress_schemas import ClientAdressCreate
 from app.models.client_adress_models import ClientAdress
 from app.auth.auth_bearer_employee import JWTBearerEmployee
-from app.auth.auth_handle_employee import token_employee_required
-from fastapi import Depends, HTTPException,status, APIRouter
-from sqlalchemy.ext.asyncio import AsyncSession
-from database import conn
-from sqlalchemy.future import select
-from jose import jwt
-from datetime import datetime
-from typing import List
+from app.auth.auth_handle import token_employee_required
 from database.conn import async_session
+from database import conn
 
 
 router=APIRouter()
+
 
 @token_employee_required
 @async_session

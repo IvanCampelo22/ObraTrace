@@ -1,10 +1,12 @@
-import os
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from typing import Union, Any
 from jose import jwt
 from functools import wraps
+
 from app.models.client_models import TokenTableClient
+from app.models.employees_models import TokenTableEmployees
+
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 30 minutes
 REFRESH_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # 7 days
@@ -62,3 +64,18 @@ def token_client_required(func):
         
     return wrapper
 
+
+def token_employee_required(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+    
+        payload = jwt.decode(kwargs['dependencies'], JWT_SECRET_KEY, ALGORITHM)
+        user_id = payload['sub']
+        data= kwargs['session'].query(TokenTableEmployees).filter_by(user_id=user_id,access_toke=kwargs['dependencies'],status=True).first()
+        if data:
+            return func(kwargs['dependencies'],kwargs['session'])
+        
+        else:
+            return {'msg': "Token blocked"}
+        
+    return wrapper

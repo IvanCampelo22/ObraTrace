@@ -1,11 +1,11 @@
 from app.models.checklist_auto_models import CheckListAuto
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.conn import async_session
 
-
 from app.schemas.checlist_auto_schemas import CheckListAutoCreate
 from app.auth.auth_bearer_employee import JWTBearerEmployee
-from app.auth.auth_handle_employee import token_employee_required
+from app.auth.auth_handle import token_employee_required
 from fastapi import Depends, HTTPException,status, APIRouter, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import conn

@@ -1,8 +1,9 @@
-import jwt
-from jwt.exceptions import InvalidTokenError
 from fastapi import HTTPException
 from fastapi import Request, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
+import jwt
+from jwt.exceptions import InvalidTokenError
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 REFRESH_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # 7 days
