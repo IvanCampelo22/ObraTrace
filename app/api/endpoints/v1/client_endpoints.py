@@ -1,7 +1,7 @@
 from app.schemas.client_schemas import ClientCreate, TokenClientSchema, requestdetails, changepassword
 from app.models.client_models import Client, TokenTableClient
-from app.auth.auth_bearer import JWTBearer
-from app.auth.auth_handler import get_hashed_password, create_access_token,create_refresh_token,verify_password, token_client_required
+from app.auth.auth_bearer_client import JWTBearerClient
+from app.auth.auth_handle_client import get_hashed_password, create_access_token,create_refresh_token,verify_password, token_client_required
 from fastapi import Depends, HTTPException,status, APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import conn
@@ -19,7 +19,7 @@ JWT_REFRESH_SECRET_KEY = "13ugfdfgh@#$%^@&jkl45678902"
 
 router=APIRouter()
 
-@router.post("/register")
+@router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register_user(client: ClientCreate, session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(Client).where(Client.email == client.email))
     existing_user = result.scalar()
@@ -63,8 +63,8 @@ async def login(request: requestdetails, session: AsyncSession = Depends(conn.ge
 
 
 @token_client_required
-@router.get('/getusers', response_model=List[ClientCreate])
-async def getusers(dependencies=Depends(JWTBearer()), db: AsyncSession = Depends(conn.get_async_session)):
+@router.get('/getusers', status_code=status.HTTP_200_OK)
+async def getusers(dependencies=Depends(JWTBearerClient()), db: AsyncSession = Depends(conn.get_async_session)):
     async with db as session:
         query = select(Client)
         result = await session.execute(query)
@@ -73,7 +73,7 @@ async def getusers(dependencies=Depends(JWTBearer()), db: AsyncSession = Depends
         return user
     
 
-@router.post('/change-password')
+@router.post('/change-password', status_code=status.HTTP_202_ACCEPTED)
 async def change_password(request: changepassword, session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(Client).where(Client.email == request.email))
     user = result.scalar()
@@ -91,8 +91,8 @@ async def change_password(request: changepassword, session: AsyncSession = Depen
 
 
 @token_client_required
-@router.post('/logout')
-async def logout(dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+@router.post('/logout', status_code=status.HTTP_200_OK)
+async def logout(dependencies=Depends(JWTBearerClient()), session: AsyncSession = Depends(conn.get_async_session)):
     token = dependencies
     payload = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
     user_id = payload['sub']
@@ -131,7 +131,7 @@ async def logout(dependencies=Depends(JWTBearer()), session: AsyncSession = Depe
 @token_client_required
 @async_session
 @router.get('/get-clients', status_code=status.HTTP_200_OK)
-async def list_users(is_activate: bool = None, is_deactivate: bool = None, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def list_users(is_activate: bool = None, is_deactivate: bool = None, dependencies=Depends(JWTBearerClient()), session: AsyncSession = Depends(conn.get_async_session)):
     client_is_activate = await session.execute(select(Client).where(Client.is_active == True))
     client_is_deactivate = await session.execute(select(Client).where(Client.is_active == False))
     result = await session.execute(select(Client))
@@ -150,7 +150,7 @@ async def list_users(is_activate: bool = None, is_deactivate: bool = None, depen
 @token_client_required
 @async_session
 @router.delete('/deactivate-client', status_code=status.HTTP_200_OK)
-async def deactivate_client(client_id: int = None, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def deactivate_client(client_id: int = None, dependencies=Depends(JWTBearerClient()), session: AsyncSession = Depends(conn.get_async_session)):
     client = await session.execute(select(Client).where(Client.id == client_id))
     try: 
         if client:

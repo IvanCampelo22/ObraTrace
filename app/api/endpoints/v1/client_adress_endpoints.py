@@ -1,7 +1,7 @@
 from app.schemas.client_adress_schemas import ClientAdressCreate, ClientAdressUpdate
 from app.models.client_adress_models import ClientAdress
-from app.auth.auth_bearer import JWTBearer
-from app.auth.auth_handler import get_hashed_password, create_access_token,create_refresh_token,verify_password, token_client_required, token_employee_required
+from app.auth.auth_bearer_employee import JWTBearerEmployee
+from app.auth.auth_handle_employee import token_employee_required
 from fastapi import Depends, HTTPException,status, APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import conn
@@ -17,7 +17,7 @@ router=APIRouter()
 @token_employee_required
 @async_session
 @router.post("/register-client-adress", status_code=status.HTTP_201_CREATED)
-async def register_client_adress(adress: ClientAdressCreate, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def register_client_adress(adress: ClientAdressCreate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(ClientAdress).where(ClientAdress.adress == adress.adress, ClientAdress.city == adress.city, ClientAdress.number == adress.number, ClientAdress.state == adress.state, ClientAdress.name_building == adress.name_building, ClientAdress.reference_point == adress.reference_point, ClientAdress.complement == adress.complement))
     existing_adress = result.scalar()
     if existing_adress: 
@@ -39,7 +39,7 @@ async def register_client_adress(adress: ClientAdressCreate, dependencies=Depend
 @token_employee_required
 @async_session
 @router.get("/list-client-adresses", status_code=status.HTTP_200_OK)
-async def list_client_adresses(dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def list_client_adresses(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
         obj = await session.execute(select(ClientAdress))
         return obj.scalar()
@@ -51,7 +51,7 @@ async def list_client_adresses(dependencies=Depends(JWTBearer()), session: Async
 @token_employee_required
 @async_session
 @router.get("/get-one-client-adress", status_code=status.HTTP_200_OK)
-async def get_one_client_adress(client_adress_id: int = None, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def get_one_client_adress(client_adress_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     adress_id = await session.execute(select(ClientAdress).where(ClientAdress.id == client_adress_id))
     try: 
         if adress_id:
@@ -65,7 +65,7 @@ async def get_one_client_adress(client_adress_id: int = None, dependencies=Depen
 @token_employee_required
 @async_session
 @router.delete("/delete-client-adress", status_code=status.HTTP_200_OK)
-async def delete_client_adress(construction_id: int = None, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def delete_client_adress(construction_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     adress_id = await session.execute(select(ClientAdress).where(ClientAdress.id == construction_id))
     try: 
         if adress_id:

@@ -5,8 +5,8 @@ from database.conn import async_session
 from database import conn
 
 from app.schemas.checlist_cam_schemas import CheckListCamCreate
-from app.auth.auth_bearer import JWTBearer
-from app.auth.auth_handler import get_hashed_password, create_access_token,create_refresh_token,verify_password, token_client_required, token_employee_required
+from app.auth.auth_bearer_employee import JWTBearerEmployee
+from app.auth.auth_handle_employee import token_employee_required
 from fastapi import Depends, HTTPException,status, APIRouter, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import conn
@@ -20,7 +20,7 @@ router=APIRouter()
 @token_employee_required
 @async_session
 @router.post("/create-checklist-cam", status_code=status.HTTP_201_CREATED)
-async def create_checlist_cam(checlistcam: CheckListCamCreate, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):    
+async def create_checlist_cam(checlistcam: CheckListCamCreate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):    
     result = await session.execute(select(CheckListCam).where(CheckListCam.qtd_cam == checlistcam.qtd_cam, CheckListCam.qtd_box_cable == checlistcam.qtd_box_cable, CheckListCam.qtd_rca == checlistcam.qtd_rca, CheckListCam.qtd_p4 == checlistcam.qtd_p4, CheckListCam.qtd_dvr == checlistcam.qtd_dvr, CheckListCam.qtd_hd == checlistcam.qtd_hd, CheckListCam.hds_size == checlistcam.hds_size, CheckListCam.other_equipament == checlistcam.other_equipament))
     existing_checlistcam = result.scalar()
     if existing_checlistcam: 
@@ -41,7 +41,7 @@ async def create_checlist_cam(checlistcam: CheckListCamCreate, dependencies=Depe
 @token_employee_required
 @async_session
 @router.get("/list-checklist-auto", status_code=status.HTTP_200_OK)
-async def list_checklist_cam(dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def list_checklist_cam(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
         obj = await session.execute(select(CheckListCam))
         return obj.scalar()
@@ -53,7 +53,7 @@ async def list_checklist_cam(dependencies=Depends(JWTBearer()), session: AsyncSe
 @token_employee_required
 @async_session
 @router.get("/get-one-checklist-cam", status_code=status.HTTP_200_OK)
-async def get_one_checklist_cam(checklist_cam_id: int = None, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def get_one_checklist_cam(checklist_cam_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     checklist_id = await session.execute(select(CheckListCam).where(CheckListCam.id == checklist_cam_id))
     try: 
         if checklist_id:
@@ -66,7 +66,7 @@ async def get_one_checklist_cam(checklist_cam_id: int = None, dependencies=Depen
 @token_employee_required
 @async_session
 @router.delete("/delete-checklist-cam", status_code=status.HTTP_200_OK)
-async def delete_checklist_cam(checklist_cam_id: int = None, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def delete_checklist_cam(checklist_cam_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     checklist_id = await session.execute(select(CheckListCam).where(CheckListCam.id == checklist_cam_id))
     try: 
         if checklist_id:

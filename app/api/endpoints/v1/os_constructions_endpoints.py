@@ -5,15 +5,13 @@ from database.conn import async_session
 from database import conn
 
 from app.schemas.os_constructions_schemas import OsConstructionsCreate
-from app.auth.auth_bearer import JWTBearer
-from app.auth.auth_handler import get_hashed_password, create_access_token,create_refresh_token,verify_password, token_client_required, token_employee_required
+from app.auth.auth_bearer_employee import JWTBearerEmployee
+from app.auth.auth_handle_employee import token_employee_required
 from fastapi import Depends, HTTPException,status, APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import conn
 from sqlalchemy.future import select
-from jose import jwt
-from datetime import datetime
-from typing import List
+
 
 router=APIRouter()
 
@@ -21,7 +19,7 @@ router=APIRouter()
 @token_employee_required
 @async_session
 @router.post("/register-os-construction", status_code=status.HTTP_201_CREATED)
-async def register_os_construction(osconstruction: OsConstructionsCreate, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def register_os_construction(osconstruction: OsConstructionsCreate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(OsConstructions).where(OsConstructions.client_id == osconstruction.client_id, OsConstructions.employee_id == osconstruction.employee_id, 
                                                                  OsConstructions.construction_id == osconstruction.construction_id, OsConstructions.checklist_auto_id == osconstruction.checklist_auto_id, 
                                                                  OsConstructions.checklist_cam_id == osconstruction.checklist_cam_id, OsConstructions.checklist_sound_id == osconstruction.checklist_sound_id, 
@@ -52,7 +50,7 @@ async def register_os_construction(osconstruction: OsConstructionsCreate, depend
 @token_employee_required
 @async_session
 @router.get("/list-os-construction")
-async def list_os_osconstructions(dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def list_os_osconstructions(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
         obj = await session.execute(select(OsConstructions))
         return obj.scalar()
@@ -64,7 +62,7 @@ async def list_os_osconstructions(dependencies=Depends(JWTBearer()), session: As
 @token_employee_required
 @async_session
 @router.get("/get-one-os-constructions", status_code=status.HTTP_200_OK)
-async def get_one_os_constructions(dependencies=Depends(JWTBearer()), os_construction_id: int = None, session: AsyncSession = Depends(conn.get_async_session)):
+async def get_one_os_constructions(dependencies=Depends(JWTBearerEmployee()), os_construction_id: int = None, session: AsyncSession = Depends(conn.get_async_session)):
     os_constructions_id = await session.execute(select(OsConstructions).where(OsConstructions.id == os_construction_id))
     try: 
         if os_constructions_id:
@@ -77,7 +75,7 @@ async def get_one_os_constructions(dependencies=Depends(JWTBearer()), os_constru
 @token_employee_required
 @async_session
 @router.delete("/delete-os-constructions", status_code=status.HTTP_200_OK)
-async def delete_os_constructions(dependencies=Depends(JWTBearer()), os_constructions_id: int = None, session: AsyncSession = Depends(conn.get_async_session)):
+async def delete_os_constructions(dependencies=Depends(JWTBearerEmployee()), os_constructions_id: int = None, session: AsyncSession = Depends(conn.get_async_session)):
     constructions_id = await session.execute(select(OsConstructions).where(OsConstructions.id == os_constructions_id))
     try: 
         if constructions_id:

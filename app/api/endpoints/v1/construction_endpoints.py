@@ -1,7 +1,7 @@
 from app.schemas.construction_schemas import ConstructionCreate
 from app.models.constructions_models import Constructions
-from app.auth.auth_bearer import JWTBearer
-from app.auth.auth_handler import get_hashed_password, create_access_token,create_refresh_token,verify_password, token_client_required, token_employee_required
+from app.auth.auth_bearer_employee import JWTBearerEmployee
+from app.auth.auth_handle_employee import token_employee_required
 from fastapi import Depends, HTTPException,status, APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import conn
@@ -17,7 +17,7 @@ router=APIRouter()
 @token_employee_required
 @async_session
 @router.post("/register-construction", status_code=status.HTTP_201_CREATED)
-async def register_construction(construction: ConstructionCreate, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def register_construction(construction: ConstructionCreate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(Constructions).where(Constructions.client_id == construction.client_id, Constructions.employee_id == construction.employee_id, Constructions.client_adress_id == construction.client_adress_id))
     existing_adress = result.scalar()
     if existing_adress: 
@@ -39,7 +39,7 @@ async def register_construction(construction: ConstructionCreate, dependencies=D
 @token_employee_required
 @async_session
 @router.get("/list-construction", status_code=status.HTTP_200_OK)
-async def list_constructions(dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def list_constructions(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
         result = await session.execute(select(Constructions))
         return result.scalar()
@@ -51,7 +51,7 @@ async def list_constructions(dependencies=Depends(JWTBearer()), session: AsyncSe
 @token_employee_required
 @async_session
 @router.get("/get-one-construction", status_code=status.HTTP_200_OK)
-async def get_one_checklist(construction_id: int = None, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def get_one_checklist(construction_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     maintenance_id = await session.execute(select(Constructions).where(Constructions.id == construction_id))
     try: 
         if maintenance_id:
@@ -64,7 +64,7 @@ async def get_one_checklist(construction_id: int = None, dependencies=Depends(JW
 @token_employee_required
 @async_session
 @router.delete("/delete-construction", status_code=status.HTTP_200_OK)
-async def delete_construction(construction_id: int = None, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def delete_construction(construction_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     construction = await session.execute(select(Constructions).where(Constructions.id == construction_id))
     try: 
         if construction:

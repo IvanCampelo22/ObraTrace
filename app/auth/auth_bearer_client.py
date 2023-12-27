@@ -1,11 +1,10 @@
 import jwt
 from jwt.exceptions import InvalidTokenError
-from fastapi import FastAPI, Depends, HTTPException,status
+from fastapi import HTTPException
 from fastapi import Request, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from app.models.client_models import TokenTableClient
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 30 minutes
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 REFRESH_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # 7 days
 ALGORITHM = "HS256"
 JWT_SECRET_KEY = "narscbjim@$@&^@&%^&RFghgjvbdsha"   # should be kept secret
@@ -20,12 +19,12 @@ def decodeJWT(jwtoken: str):
         return None
 
 
-class JWTBearer(HTTPBearer):
+class JWTBearerClient(HTTPBearer):
     def __init__(self, auto_error: bool = True):
-        super(JWTBearer, self).__init__(auto_error=auto_error)
+        super(JWTBearerClient, self).__init__(auto_error=auto_error)
 
     async def __call__(self, request: Request):
-        credentials: HTTPAuthorizationCredentials = await super(JWTBearer, self).__call__(request)
+        credentials: HTTPAuthorizationCredentials = await super(JWTBearerClient, self).__call__(request)
         if credentials:
             if not credentials.scheme == "Bearer":
                 raise HTTPException(status_code=403, detail="Invalid authentication scheme.")
@@ -46,4 +45,4 @@ class JWTBearer(HTTPBearer):
             isTokenValid = True
         return isTokenValid
 
-jwt_bearer = JWTBearer()
+jwt_bearer = JWTBearerClient()

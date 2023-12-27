@@ -1,26 +1,23 @@
-from app.models.other_checklist_models import OtherCheckList
 from sqlalchemy.ext.asyncio import AsyncSession
-from database.conn import async_session
-
-
-from app.schemas.other_checklist_schemas import OtherCheckListCreate, OtherCheckListSchema
-from app.auth.auth_bearer import JWTBearer
-from app.auth.auth_handler import get_hashed_password, create_access_token,create_refresh_token,verify_password, token_client_required, token_employee_required
-from fastapi import Depends, HTTPException,status, APIRouter, UploadFile, File, Response
-from sqlalchemy.ext.asyncio import AsyncSession
-from database import conn
+from fastapi import Depends, HTTPException,status, APIRouter, UploadFile, File
 from sqlalchemy.future import select
-from jose import jwt
-from datetime import datetime
 
-router=APIRouter()
+from app.models.other_checklist_models import OtherCheckList
+from app.schemas.other_checklist_schemas import OtherCheckListCreate
+from database.conn import async_session
+from database import conn
+from app.auth.auth_bearer_employee import JWTBearerEmployee
+from app.auth.auth_handle_employee import token_employee_required
+
+
+router = APIRouter()
 
 
 @token_employee_required
 @async_session
 @router.post("/create-other-checklist", status_code=status.HTTP_201_CREATED)
 async def create_other_checklist(otherchecklist: OtherCheckListCreate, 
-                                 dependencies=Depends(JWTBearer()), 
+                                 dependencies=Depends(JWTBearerEmployee()), 
                                  session: AsyncSession = Depends(conn.get_async_session)):    
     result = await session.execute(select(OtherCheckList).where(OtherCheckList.equipment == otherchecklist.equipment))
     existing_otherchecklist = result.scalar()
@@ -42,7 +39,7 @@ async def create_other_checklist(otherchecklist: OtherCheckListCreate,
 @token_employee_required
 @async_session
 @router.get("/list-other-checklist", status_code=status.HTTP_200_OK)
-async def list_other_checklist(dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def list_other_checklist(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
         result = await session.execute(select(OtherCheckList))
         return result.scalar()
@@ -54,7 +51,7 @@ async def list_other_checklist(dependencies=Depends(JWTBearer()), session: Async
 @token_employee_required
 @async_session
 @router.get("/get-one-other-checklist", status_code=status.HTTP_200_OK)
-async def get_one_other_checklist(other_checklist_id: int = None, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def get_one_other_checklist(other_checklist_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     checklist_id = await session.execute(select(OtherCheckList).where(OtherCheckList.id == other_checklist_id))
     try: 
         if checklist_id:
@@ -67,7 +64,7 @@ async def get_one_other_checklist(other_checklist_id: int = None, dependencies=D
 @token_employee_required
 @async_session
 @router.delete("/delete-other-checklist", status_code=status.HTTP_200_OK)
-async def delete_other_checklist(other_checklist_id: int = None, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def delete_other_checklist(other_checklist_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     checklist_id = await session.execute(select(OtherCheckList).where(OtherCheckList.id == other_checklist_id))
     try: 
         if checklist_id:

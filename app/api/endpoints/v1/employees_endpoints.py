@@ -1,7 +1,8 @@
 from app.schemas.employee_schemas import EmployeeCreate, TokenEmployeeSchema, requestdetails, changepassword
 from app.models.employees_models import Employees, TokenTableEmployees
-from app.auth.auth_bearer import JWTBearer
-from app.auth.auth_handler import get_hashed_password, create_access_token,create_refresh_token,verify_password, token_employee_required
+from app.auth.auth_bearer_employee import JWTBearerEmployee
+from app.auth.auth_handle_employee import token_employee_required
+from app.auth.auth_handle_client import get_hashed_password, create_access_token,create_refresh_token,verify_password
 from fastapi import Depends, HTTPException,status, APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import conn
@@ -64,7 +65,7 @@ async def login(request: requestdetails, session: AsyncSession = Depends(conn.ge
 
 @token_employee_required
 @router.get('/getusers', response_model=List[EmployeeCreate])
-async def getusers(dependencies=Depends(JWTBearer()), db: AsyncSession = Depends(conn.get_async_session)):
+async def getusers(dependencies=Depends(JWTBearerEmployee()), db: AsyncSession = Depends(conn.get_async_session)):
     async with db as session:
         query = select(Employees)
         result = await session.execute(query)
@@ -92,7 +93,7 @@ async def change_password(request: changepassword, session: AsyncSession = Depen
 
 @token_employee_required
 @router.post('/logout')
-async def logout(dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def logout(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     token = dependencies
     payload = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
     user_id = payload['sub']
@@ -131,7 +132,7 @@ async def logout(dependencies=Depends(JWTBearer()), session: AsyncSession = Depe
 @token_employee_required
 @async_session
 @router.get('/get-employees', status_code=status.HTTP_200_OK)
-async def list_users(is_activate: bool = None, is_deactivate: bool = None, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def list_users(is_activate: bool = None, is_deactivate: bool = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     employee_is_activate = await session.execute(select(Employees).where(Employees.is_active == True))
     employee_is_deactivate = await session.execute(select(Employees).where(Employees.is_active == False))
     result = await session.execute(select(Employees))
@@ -150,7 +151,7 @@ async def list_users(is_activate: bool = None, is_deactivate: bool = None, depen
 @token_employee_required
 @async_session
 @router.delete('/deactivate-employee', status_code=status.HTTP_200_OK)
-async def deactivate_employee(employee_id: int = None, dependencies=Depends(JWTBearer()), session: AsyncSession = Depends(conn.get_async_session)):
+async def deactivate_employee(employee_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     employee = await session.execute(select(Employees).where(Employees.id == employee_id))
     try: 
         if employee:
