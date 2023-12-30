@@ -12,6 +12,7 @@
 - Postgresql
 - Docker
 
+
  ## Como executar o projeto
 
 1. Ir até a pasta do projeto e criar a virualenv
@@ -29,6 +30,7 @@
 4. Na raiz do projeto, onde estiver o arquivo main.py execute: 
 
 > python main.py
+
 
 ### Se sua distribuição adotar o PEP 668 
 
@@ -50,6 +52,18 @@
 
 > http://127.0.0.1:8000/docs
 
+
+## Executando via Docker
+
+1. Faça o build da image Docker que está na raiz do projeto
+
+ > docker build -t fastapi-app .
+
+2. Execute a imagem Docker que foi construida
+
+ > docker run -p 8080:8080 fastapi-app
+
+
 ## Como fazer migrações no banco de dados
 
 1. Execute o comando para criar o arquivo de migração no versions
@@ -63,14 +77,3 @@
 > alembic upgrade head
 
 ### Obs: consulte a documentação do alembic para entender como fazer a migração no banco de dados, pois se trata de algo um tanto complexo. 
-
-
-## Executando via Docker
-
-1. Faça o build da image Docker que está na raiz do projeto
-
- > docker build -t fastapi-app .
-
-2. Execute a imagem Docker que foi construida
-
- > docker run -p 8080:8080 fastapi-app
