@@ -6,13 +6,13 @@ class CheckListAutoBase(BaseModel):
 
 
 class CheckListAutoCreate(CheckListAutoBase):
-    rele_type: str | None = None
-    qtd_rele: int | None = None 
-    qtd_cable: int | None = None 
-    switch_type: str | None = None 
-    qtd_switch: int | None = None 
-    qtd_hub: int | None = None 
-    other_equipament: str | None = None
+    rele_type: str = None 
+    qtd_rele: int = None
+    qtd_cable: int = None
+    switch_type: str = None 
+    qtd_switch: int = None
+    qtd_hub: int = None
+    other_equipament: str = None
     
 
 class CheckListAuto(CheckListAutoBase):
