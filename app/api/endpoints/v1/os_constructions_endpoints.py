@@ -2,6 +2,8 @@ from fastapi import APIRouter, File, UploadFile, Depends, status, HTTPException
 
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import List
+
 
 from app.schemas.os_constructions_schemas import OsConstructionsCreate
 from app.models.os_constructions_models import OsConstructions
@@ -50,8 +52,10 @@ async def register_os_construction(osconstruction: OsConstructionsCreate, depend
 @router.get("/list-os-construction")
 async def list_os_osconstructions(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
-        obj = await session.execute(select(OsConstructions))
-        return obj.scalar()
+        query = select(OsConstructions)
+        result = await session.execute(query)
+        osconstruction: List[OsConstructionsCreate] = result.scalars().all()
+        return osconstruction
     except Exception as e:
         await session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
@@ -73,7 +77,7 @@ async def get_one_os_constructions(dependencies=Depends(JWTBearerEmployee()), os
 @token_employee_required
 @async_session
 @router.delete("/delete-os-constructions", status_code=status.HTTP_200_OK)
-async def delete_os_constructions(dependencies=Depends(JWTBearerEmployee()), os_constructions_id: int = None, session: AsyncSession = Depends(conn.get_async_session)):
+async def delete_os_constructions(os_constructions_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     constructions_id = await session.execute(select(OsConstructions).where(OsConstructions.id == os_constructions_id))
     try: 
         if constructions_id:

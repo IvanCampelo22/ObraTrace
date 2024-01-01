@@ -16,5 +16,9 @@ COPY . .
 # Expose the port on which the application will run
 EXPOSE 8080
 
+RUN alembic revision -m "migration"
+
+RUN alembic upgrade head --sql
+
 # Run the FastAPI application using uvicorn server
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

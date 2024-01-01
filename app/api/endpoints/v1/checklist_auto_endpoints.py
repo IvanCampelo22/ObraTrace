@@ -1,7 +1,8 @@
 from app.models.checklist_auto_models import CheckListAuto
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from database.conn import async_session
+from sqlalchemy.future import select
+from typing import List
 
 from app.schemas.checlist_auto_schemas import CheckListAutoCreate
 from app.auth.auth_bearer_employee import JWTBearerEmployee
@@ -9,7 +10,9 @@ from app.auth.auth_handle import token_employee_required
 from fastapi import Depends, HTTPException,status, APIRouter, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import conn
-from sqlalchemy.future import select
+from database.conn import async_session
+
+
 
 
 router=APIRouter()
@@ -41,8 +44,10 @@ async def create_checlist_auto(checlistauto: CheckListAutoCreate, dependencies=D
 @router.get("/list-checklist-auto", status_code=status.HTTP_200_OK)
 async def list_checklist_auto(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
-        result = await session.execute(select(CheckListAuto))
-        return result.scalar()
+        query = select(CheckListAuto)
+        result = await session.execute(query)
+        checklist_auto: List[CheckListAutoCreate] = result.scalars().all()
+        return checklist_auto
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')

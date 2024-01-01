@@ -2,6 +2,7 @@ from fastapi import Depends, HTTPException,status, APIRouter
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from typing import List
 
 from app.schemas.construction_schemas import ConstructionCreate
 from app.models.constructions_models import Constructions
@@ -40,8 +41,10 @@ async def register_construction(construction: ConstructionCreate, dependencies=D
 @router.get("/list-construction", status_code=status.HTTP_200_OK)
 async def list_constructions(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
-        result = await session.execute(select(Constructions))
-        return result.scalar()
+        query = select(Constructions)
+        result = await session.execute(query)
+        construction: List[ConstructionCreate] = result.scalars().all()
+        return construction
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')

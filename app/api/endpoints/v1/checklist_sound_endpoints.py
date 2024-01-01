@@ -2,6 +2,7 @@ from fastapi import APIRouter, File, UploadFile, Depends, status, HTTPException
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from typing import List
 
 from app.schemas.checlist_sound_schemas import CheckListSoundCreate
 from app.models.checklist_sound_models import CheckListSound
@@ -42,8 +43,10 @@ async def create_checlist_sound(checlistsound: CheckListSoundCreate, dependencie
 @router.get("/list-checklist-sound", status_code=status.HTTP_200_OK)
 async def list_checklist_sound(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
-        result = await session.execute(select(CheckListSound))
-        return result.scalar()
+        query = select(CheckListSound)
+        result = await session.execute(query)
+        checklist_sound: List[CheckListSoundCreate] = result.scalars().all()
+        return checklist_sound
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')

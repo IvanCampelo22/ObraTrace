@@ -2,6 +2,7 @@ from fastapi import Depends, HTTPException,status, APIRouter
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from typing import List
 
 from app.schemas.client_adress_schemas import ClientAdressCreate
 from app.models.client_adress_models import ClientAdress
@@ -41,8 +42,10 @@ async def register_client_adress(adress: ClientAdressCreate, dependencies=Depend
 @router.get("/list-client-adresses", status_code=status.HTTP_200_OK)
 async def list_client_adresses(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
-        obj = await session.execute(select(ClientAdress))
-        return obj.scalar()
+        query = select(ClientAdress)
+        result = await session.execute(query)
+        client_adress: List[ClientAdressCreate] = result.scalars().all()
+        return client_adress
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
@@ -65,8 +68,8 @@ async def get_one_client_adress(client_adress_id: int = None, dependencies=Depen
 @token_employee_required
 @async_session
 @router.delete("/delete-client-adress", status_code=status.HTTP_200_OK)
-async def delete_client_adress(construction_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
-    adress_id = await session.execute(select(ClientAdress).where(ClientAdress.id == construction_id))
+async def delete_client_adress(client_adress_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
+    adress_id = await session.execute(select(ClientAdress).where(ClientAdress.id == client_adress_id))
     try: 
         if adress_id:
             obj_adress = adress_id.scalar_one()

@@ -2,6 +2,7 @@ from fastapi import APIRouter, File, UploadFile, Depends, status, HTTPException
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from typing import List
 
 from app.schemas.os_maintenance_schemas import OsMaintenanceCreate
 from app.auth.auth_bearer_employee import JWTBearerEmployee
@@ -48,10 +49,12 @@ async def register_os_maintenance(osmaintenance: OsMaintenanceCreate, dependenci
 @token_employee_required
 @async_session
 @router.get("/list-os-maintenance", status_code=status.HTTP_200_OK)
-async def list_os_osconstructions(session: AsyncSession = Depends(conn.get_async_session)):
+async def list_os_maintenance(session: AsyncSession = Depends(conn.get_async_session)):
     try: 
-        result = await session.execute(select(OsMaintenance))
-        return result.scalar()
+        query = select(OsMaintenance)
+        result = await session.execute(query)
+        osmaintenance: List[OsMaintenanceCreate] = result.scalars().all()
+        return osmaintenance
     except Exception as e:
         await session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
@@ -73,7 +76,7 @@ async def get_one_os_maintenance(os_maintenance_id: int = None, dependencies=Dep
 @token_employee_required
 @async_session
 @router.delete("/delete-os-maintenance", status_code=status.HTTP_200_OK)
-async def delete_other_checklist(os_maintenance_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
+async def delete_os_maintenance(os_maintenance_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     maintenance_id = await session.execute(select(OsMaintenance).where(OsMaintenance.id == os_maintenance_id))
     try: 
         if maintenance_id:

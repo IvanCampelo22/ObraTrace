@@ -2,6 +2,7 @@ from fastapi import APIRouter, File, UploadFile, Depends, status, HTTPException
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from typing import List
 
 from app.schemas.checlist_cam_schemas import CheckListCamCreate
 from app.models.checklist_cam_models import CheckListCam
@@ -11,8 +12,7 @@ from database import conn
 from database.conn import async_session
 
 
-
-router=APIRouter()
+router = APIRouter()
 
 
 @token_employee_required
@@ -41,8 +41,10 @@ async def create_checlist_cam(checlistcam: CheckListCamCreate, dependencies=Depe
 @router.get("/list-checklist-auto", status_code=status.HTTP_200_OK)
 async def list_checklist_cam(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
-        obj = await session.execute(select(CheckListCam))
-        return obj.scalar()
+        query = select(CheckListCam)
+        result = await session.execute(query)
+        checklist_cam: List[CheckListCamCreate] = result.scalars().all()
+        return checklist_cam
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')

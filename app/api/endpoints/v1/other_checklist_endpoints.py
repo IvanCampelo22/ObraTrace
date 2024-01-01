@@ -2,6 +2,7 @@ from fastapi import Depends, HTTPException,status, APIRouter, UploadFile, File
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from typing import List
 
 from app.models.other_checklist_models import OtherCheckList
 from app.schemas.other_checklist_schemas import OtherCheckListCreate
@@ -43,8 +44,10 @@ async def create_other_checklist(otherchecklist: OtherCheckListCreate,
 @router.get("/list-other-checklist", status_code=status.HTTP_200_OK)
 async def list_other_checklist(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
-        result = await session.execute(select(OtherCheckList))
-        return result.scalar()
+        query = select(OtherCheckList)
+        result = await session.execute(query)
+        otherchecklist: List[OtherCheckListCreate] = result.scalars().all()
+        return otherchecklist
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
