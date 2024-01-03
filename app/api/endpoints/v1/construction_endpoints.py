@@ -13,6 +13,7 @@ from app.auth.auth_handle import token_employee_required
 from database import conn
 from database.conn import async_session
 
+
 router = APIRouter()
 
 
@@ -56,16 +57,19 @@ async def list_constructions(session: AsyncSession = Depends(conn.get_async_sess
         raise HTTPException(status_code=500, detail=f'{e}')
 
     
-
 @token_employee_required
 @async_session
 @router.get("/get-one-construction", status_code=status.HTTP_200_OK)
 async def get_one_checklist(construction_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
-    maintenance_id = await session.execute(select(Constructions).where(Constructions.id == construction_id))
     try: 
-        if maintenance_id:
-            obj_construction = maintenance_id.scalar_one()
-            return obj_construction
+        async with session.begin():
+            maintenance_id = await session.execute(select(Constructions).where(Constructions.id == construction_id).options(joinedload(Constructions.client_adress)).\
+                                                   options(joinedload(Constructions.employee)).\
+                                                    options(joinedload(Constructions.os_construction)))
+            maintenance_id = maintenance_id.unique()
+            if maintenance_id:
+                obj_construction = maintenance_id.scalar_one()
+                return obj_construction
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"{e}")
     
