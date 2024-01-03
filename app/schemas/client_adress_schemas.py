@@ -17,6 +17,12 @@ class ClientAdressCreate(ClientAdressBase):
     complement: str = None
 
 
-class ClientAdress(ClientAdressBase):
+class ClientAdressSchema(BaseModel):
     id = int
+    name_building: str = None
+    reference_point: str = None
+    complement: str = None
+
+    class Config:
+        orm_mode = True
 

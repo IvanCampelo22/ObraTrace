@@ -20,5 +20,7 @@ RUN alembic revision -m "migration"
 
 RUN alembic upgrade head --sql
 
+RUN alembic upgrade head
+
 # Run the FastAPI application using uvicorn server
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

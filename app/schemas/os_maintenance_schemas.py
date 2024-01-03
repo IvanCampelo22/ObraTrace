@@ -9,10 +9,10 @@ class OsMaintenanceBase(BaseModel):
     client_adress_id: int
 
 class OsMaintenanceCreate(OsMaintenanceBase):
-    checklist_cam_id: int
-    checklist_auto_id: int
-    checklist_sound_id: int
-    other_checklist_id: int
+    checklist_cam_id: Optional[int] = None
+    checklist_auto_id: Optional[int] = None 
+    checklist_sound_id: Optional[int] = None 
+    other_checklist_id: Optional[int] = None
     scheduling: Optional[date] = None 
     end_date: Optional[date] = None
     info: str

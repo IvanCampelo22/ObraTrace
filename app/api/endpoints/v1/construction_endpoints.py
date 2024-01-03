@@ -2,9 +2,11 @@ from fastapi import Depends, HTTPException,status, APIRouter
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
 from typing import List
 
-from app.schemas.construction_schemas import ConstructionCreate
+from app.schemas.construction_schemas import ConstructionCreate, ConstructionSchema, ConstructionUpdate
+from app.schemas.client_adress_schemas import ClientAdressSchema
 from app.models.constructions_models import Constructions
 from app.auth.auth_bearer_employee import JWTBearerEmployee
 from app.auth.auth_handle import token_employee_required
@@ -34,20 +36,25 @@ async def register_construction(construction: ConstructionCreate, dependencies=D
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
-    
+
 
 @token_employee_required
 @async_session
-@router.get("/list-construction", status_code=status.HTTP_200_OK)
-async def list_constructions(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
-    try: 
-        query = select(Constructions)
-        result = await session.execute(query)
-        construction: List[ConstructionCreate] = result.scalars().all()
-        return construction
+@router.get("/list-construction", status_code=status.HTTP_200_OK, response_model=None)
+async def list_constructions(session: AsyncSession = Depends(conn.get_async_session)) -> any:
+    try:
+        async with session.begin():
+            query = select(Constructions).options(joinedload(Constructions.client_adress)).\
+            options(joinedload(Constructions.employee)).\
+            options(joinedload(Constructions.os_construction))
+            result = await session.execute(query)
+            result = result.unique()
+            constructions: List[ConstructionSchema] = result.scalars().all()
+            return constructions
     except Exception as e:
-        session.rollback()
+        await session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
+
     
 
 @token_employee_required
@@ -60,6 +67,26 @@ async def get_one_checklist(construction_id: int = None, dependencies=Depends(JW
             obj_construction = maintenance_id.scalar_one()
             return obj_construction
     except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
+    
+
+@token_employee_required
+@async_session
+@router.put('/update-construction/{construction_id}', status_code=status.HTTP_202_ACCEPTED)
+async def update_construction(construction_id: int, construction: ConstructionUpdate, session: AsyncSession = Depends(conn.get_async_session)):
+    try:
+        async with session.begin():
+            constructions = await session.execute(select(Constructions).where(Constructions.id == construction_id))
+            existing_construction = constructions.scalars().first()
+
+            if existing_construction:
+                existing_construction.is_done = construction.is_done
+                await session.commit()
+                return existing_construction
+            else:
+                return {"message": "Obra não encontrada"}
+    except Exception as e:
+        await session.rollback()
         raise HTTPException(status_code=500, detail=f"{e}")
     
 
