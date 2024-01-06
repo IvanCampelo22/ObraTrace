@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from typing import List
 
-from app.schemas.checlist_auto_schemas import CheckListAutoCreate
+from app.schemas.checlist_auto_schemas import CheckListAutoCreate, CheckListAutoUpdate
 from app.models.checklist_auto_models import CheckListAuto
 from app.auth.auth_bearer_employee import JWTBearerEmployee
 from app.auth.auth_handle import token_employee_required
@@ -59,7 +59,49 @@ async def create_checlist_auto(checlistauto: CheckListAutoCreate, dependencies=D
     
 @token_employee_required
 @async_session
-@router.get("/list-checklist-auto", status_code=status.HTTP_200_OK)
+@router.get("/list-checklist-auto", responses={
+    200: {
+        "description": "Lista de checklist de automação",
+        "content": {
+            "application/json": {
+                "example": [
+                    {   
+                        "client_id": 1,
+                        "adress": "Rua Do Futuro",
+                        "number": "04",
+                        "state": "PE",
+                        "reference_point": "Ao Lado do Pet Shop",
+                        "updated_at": "2023-12-15T19:28:23.043687",
+                        "id": 1,
+                        "employee_id": 7,
+                        "city": "Recife",
+                        "name_building": "Oscar Duval",
+                        "complement": "Prédio Preto",
+                        "created_at": "2023-12-15T19:28:23.043765"
+  
+                    },
+
+                    {   
+                        "client_id": 2,
+                        "adress": "Rua Maria Bonita",
+                        "number": "05",
+                        "state": "PE",
+                        "reference_point": "Ao Lado da Praia",
+                        "updated_at": "2023-12-15T19:28:23.043687",
+                        "id": 2,
+                        "employee_id": 7,
+                        "city": "Recife",
+                        "name_building": "Josuita Santos",
+                        "complement": "Prédio Azul",
+                        "created_at": "2023-12-15T19:28:23.043765"
+  
+                    }
+
+                ]
+            }
+        },
+        404: {"description": "Não foi possível recuperar checklists de automação"}
+}}, status_code=status.HTTP_200_OK)
 async def list_checklist_auto(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
         query = select(CheckListAuto)
@@ -73,20 +115,94 @@ async def list_checklist_auto(dependencies=Depends(JWTBearerEmployee()), session
 
 @token_employee_required
 @async_session
-@router.get("/get-one-checklist-auto", status_code=status.HTTP_200_OK)
+@router.get("/get-one-checklist-auto", responses={
+    200: {
+        "description": "Lista de checklist de automação",
+        "content": {
+            "application/json": {
+                "example": [
+                    {   
+                        "client_id": 1,
+                        "adress": "Rua Do Futuro",
+                        "number": "04",
+                        "state": "PE",
+                        "reference_point": "Ao Lado do Pet Shop",
+                        "updated_at": "2023-12-15T19:28:23.043687",
+                        "id": 1,
+                        "employee_id": 7,
+                        "city": "Recife",
+                        "name_building": "Oscar Duval",
+                        "complement": "Prédio Preto",
+                        "created_at": "2023-12-15T19:28:23.043765"
+  
+                    }
+
+                ]
+            }
+        },
+        404: {"description": "Não foi possível recuperar checklist de automação"}
+}}, status_code=status.HTTP_200_OK)
 async def get_one_checklist_auto(checklist_auto_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     checklist_id = await session.execute(select(CheckListAuto).where(CheckListAuto.id == checklist_auto_id))
     try: 
-        if checklist_id:
-            obj_checklist = checklist_id.scalar_one()
-            return obj_checklist
+        async with session.begin():
+            if checklist_id:
+                obj_checklist = checklist_id.scalar_one()
+                return obj_checklist
     except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
+    
+    
+@token_employee_required
+@async_session
+@router.put('/update-checklist-auto/{checklist_auto_id}', status_code=status.HTTP_202_ACCEPTED)
+async def update_construction(checklist_auto_id: int, checklistauto: CheckListAutoUpdate, session: AsyncSession = Depends(conn.get_async_session)):
+    try:
+        async with session.begin():
+            checklist = await session.execute(select(CheckListAuto).where(CheckListAuto.id == checklist_auto_id))
+            existing_checklist = checklist.scalars().first()
+
+            if existing_checklist:
+                if checklistauto.employee_id is not None:
+                    existing_checklist.employee_id = checklistauto.employee_id
+                else: 
+                    existing_checklist.employee_id = existing_checklist.employee_id
+
+                existing_checklist.rele_type = checklistauto.rele_type
+                existing_checklist.qtd_rele = checklistauto.qtd_rele
+                existing_checklist.qtd_cable = checklistauto.qtd_cable
+                existing_checklist.switch_type = checklistauto.switch_type
+                existing_checklist.qtd_switch = checklistauto.qtd_switch
+                existing_checklist.qtd_hub = checklistauto.qtd_hub
+                existing_checklist.other_equipament = checklistauto.other_equipament
+    
+                await session.commit()
+                return existing_checklist
+            else:
+                return {"message": "Checklist não encontrado"}
+            
+    except Exception as e:
+        await session.rollback()
         raise HTTPException(status_code=500, detail=f"{e}")
     
 
 @token_employee_required
 @async_session
-@router.delete("/delete-checklist-auto", status_code=status.HTTP_200_OK)
+@router.delete("/delete-checklist-auto", responses={
+    200: {
+        "description": "Lista de checklist de automação",
+        "content": {
+            "application/json": {
+                "example": [
+                    {   
+                        "message": "Checklist deletado com sucesso"
+                    }
+
+                ]
+            }
+        },
+        404: {"description": "Não foi possível deletar checklist de automação"}
+}}, status_code=status.HTTP_200_OK)
 async def delete_checklist_auto(checklist_auto_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     checklist_id = await session.execute(select(CheckListAuto).where(CheckListAuto.id == checklist_auto_id))
     try: 
@@ -94,7 +210,7 @@ async def delete_checklist_auto(checklist_auto_id: int = None, dependencies=Depe
             obj_checklist = checklist_id.scalar_one()
             await session.delete(obj_checklist)
             await session.commit()
-            return {"message": "Checklist deletado com sucesso"}
+            return {"message": "Checklist de automação deletado com sucesso"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"{e}")
     
