@@ -1,14 +1,19 @@
 from pydantic import BaseModel
 from datetime import date
 from typing import Optional
+from enum import Enum
 
+class OsTypeEnum(str, Enum):
+    Instalação = "Instalação"
+    Manutenção = "Manutenção"
 
-class OsMaintenanceBase(BaseModel):
+class OsBase(BaseModel):
     employee_id: int 
     client_id: int 
     client_adress_id: int
+    os_type: OsTypeEnum
 
-class OsMaintenanceCreate(OsMaintenanceBase):
+class OsCreate(OsBase):
     checklist_cam_id: Optional[int] = None
     checklist_auto_id: Optional[int] = None 
     checklist_sound_id: Optional[int] = None 
@@ -21,5 +26,5 @@ class OsMaintenanceCreate(OsMaintenanceBase):
     signature_emplooye: str
     signature_client: str
 
-class OsMaintenance:
+class Os:
     id: int

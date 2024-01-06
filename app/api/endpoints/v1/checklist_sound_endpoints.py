@@ -12,7 +12,7 @@ from database import conn
 from database.conn import async_session
 
 
-router=APIRouter()
+router = APIRouter()
 
 
 @token_employee_required

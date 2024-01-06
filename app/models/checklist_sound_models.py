@@ -21,4 +21,4 @@ class CheckListSound(Base):
 
     employee = relationship('Employees', back_populates='checklist_sound')
     os_construction = relationship('OsConstructions', back_populates='checklist_sound')
-    os_maintenance = relationship('OsMaintenance', back_populates='checklist_sound')
+    os = relationship('Os', back_populates='checklist_sound')

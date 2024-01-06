@@ -17,7 +17,21 @@ router = APIRouter()
 
 @token_employee_required
 @async_session
-@router.post("/create-other-checklist", status_code=status.HTTP_201_CREATED)
+@router.post("/create-other-checklist", responses={
+    200: {
+        "description": "Checklist criada com sucesso",
+        "content": {
+            "application/json": {
+                "example": [
+                    {   
+                        "employee_id": 1,
+                        "equipment": "Uma caixa de cabo UTP, um switch de 8 portas, e 12 conectores RJ"
+                    }
+                ]
+            }
+        },
+        404: {"description": "Insira dados válidos"}
+}},  status_code=status.HTTP_201_CREATED)
 async def create_other_checklist(otherchecklist: OtherCheckListCreate, 
                                  dependencies=Depends(JWTBearerEmployee()), 
                                  session: AsyncSession = Depends(conn.get_async_session)):    

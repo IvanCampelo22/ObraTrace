@@ -18,7 +18,29 @@ router = APIRouter()
 
 @token_employee_required
 @async_session
-@router.post("/register-os-construction", status_code=status.HTTP_201_CREATED)
+@router.post("/register-os-construction", responses={
+    200: {
+        "description": "Ordem de Serviço para obra criada com sucesso",
+        "content": {
+            "application/json": {
+                "example": [
+                    {   
+                        "checklist_cam_id": 1,
+                        "checklist_auto_id": 1, 
+                        "checklist_sound_id": 1,
+                        "other_checklist_id": 1,
+                        "scheduling": "2024-01-01", 
+                        "end_date": "2024-01-02",
+                        "info": "Instalação de caixas de som, de câmeras e de automação",
+                        "sale": "O cliente precisa de uma câmera a mais no lado oeste da casa",
+                        "signature_emplooye": "Jorge Mazarate",
+                        "signature_client": "John Done"
+                    }
+                ]
+            }
+        },
+        404: {"description": "Insira dados válidos"}
+}}, status_code=status.HTTP_201_CREATED)
 async def register_os_construction(osconstruction: OsConstructionsCreate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(OsConstructions).where(OsConstructions.client_id == osconstruction.client_id, OsConstructions.employee_id == osconstruction.employee_id, 
                                                                  OsConstructions.construction_id == osconstruction.construction_id, OsConstructions.checklist_auto_id == osconstruction.checklist_auto_id, 

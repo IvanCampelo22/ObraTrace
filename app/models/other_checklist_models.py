@@ -17,4 +17,4 @@ class OtherCheckList(Base):
 
     employee = relationship('Employees', back_populates='other_checklist')
     os_construction = relationship('OsConstructions', back_populates='other_checklist')
-    os_maintenance = relationship('OsMaintenance', back_populates='other_checklist')
+    os = relationship('Os', back_populates='other_checklist')

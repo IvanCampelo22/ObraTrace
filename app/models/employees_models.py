@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime,Boolean, Enum
 from sqlalchemy.orm import relationship
 from database.conn import Base
 import datetime
-from app.models.os_maintenance_models import OsMaintenance
+from app.models.os_models import Os
 from app.models.other_checklist_models import OtherCheckList
 from app.models.checklist_auto_models import CheckListAuto
 from app.models.checklist_cam_models import CheckListCam
@@ -21,7 +21,7 @@ class Employees(Base):
 
     client_adress = relationship('ClientAdress', back_populates='employee') 
     os_construction = relationship('OsConstructions', back_populates='employee')
-    os_maintenance = relationship('OsMaintenance', back_populates='employee')
+    os = relationship('Os', back_populates='employee')
     construction = relationship('Constructions', back_populates='employee')
     other_checklist = relationship('OtherCheckList', back_populates='employee')
     checklist_cam = relationship('CheckListCam', back_populates='employee')

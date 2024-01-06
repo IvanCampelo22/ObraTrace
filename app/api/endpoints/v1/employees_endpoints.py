@@ -26,7 +26,23 @@ JWT_REFRESH_SECRET_KEY = "13ugfdfgh@#$%^@&jkl45678902"
 router = APIRouter()
 
 
-@router.post("/register")
+@router.post("/register", responses={
+    200: {
+        "description": "Funcionário cadastrado com sucesso",
+        "content": {
+            "application/json": {
+                "example": [
+                    {   
+                        "username": "John Doe",
+                        "email": "johndoe@gmail.com", 
+                        "password": "12345678",
+                        "work_type": "Comercial"
+                    }
+                ]
+            }
+        },
+        404: {"description": "Insira dados válidos"}
+}},)
 async def register_user(employee: EmployeeCreate, session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(Employees).where(Employees.email == employee.email))
     existing_user = result.scalar()
@@ -43,7 +59,21 @@ async def register_user(employee: EmployeeCreate, session: AsyncSession = Depend
     return {"message":"funcionário criado com sucesso"}
 
 
-@router.post('/login' ,response_model=TokenEmployeeSchema)
+@router.post('/login', responses={
+    200: {
+        "description": "Login realizado com sucesso",
+        "content": {
+            "application/json": {
+                "example": [
+                    {   
+                        "email": "johndoe@gmail.com", 
+                        "password": "12345678",
+                    }
+                ]
+            }
+        },
+        404: {"description": "Insira dados válidos"}
+}},response_model=TokenEmployeeSchema)
 async def login(request: requestdetails, session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(Employees).where(Employees.email == request.email))
     employee = result.scalar()

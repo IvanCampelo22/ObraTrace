@@ -1,5 +1,5 @@
 from fastapi.routing import APIRouter
-from app.api.endpoints.v1 import checklist_auto_endpoints, checklist_cam_endpoints, checklist_sound_endpoints, other_checklist_endpoints, construction_endpoints, os_constructions_endpoints, os_maintenance_endpoints
+from app.api.endpoints.v1 import checklist_auto_endpoints, checklist_cam_endpoints, checklist_sound_endpoints, os_endpoints, other_checklist_endpoints, construction_endpoints, os_constructions_endpoints
 from app.api.endpoints.v1 import client_endpoints
 from app.api.endpoints.v1 import employees_endpoints
 from app.api.endpoints.v1 import client_adress_endpoints
@@ -14,6 +14,6 @@ api_router.include_router(checklist_sound_endpoints.router, prefix='/checklist_s
 api_router.include_router(other_checklist_endpoints.router, prefix='/checklist', tags=['other_checklist'])
 api_router.include_router(construction_endpoints.router, prefix="/constructions", tags=['constructions'])
 api_router.include_router(os_constructions_endpoints.router, prefix="/os_constructions", tags=['os_constructions'])
-api_router.include_router(os_maintenance_endpoints.router, prefix="/os_maintenance", tags=['os_maintenance'])
+api_router.include_router(os_endpoints.router, prefix="/os", tags=['os'])
 
 

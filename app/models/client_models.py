@@ -15,7 +15,7 @@ class Client(Base):
 
     client_adress = relationship('ClientAdress', back_populates='client')
     os_construction = relationship('OsConstructions', back_populates='client')
-    os_maintenance = relationship('OsMaintenance', back_populates='client')
+    os = relationship('Os', back_populates='client')
     construction = relationship('Constructions', back_populates='client')
 
 
