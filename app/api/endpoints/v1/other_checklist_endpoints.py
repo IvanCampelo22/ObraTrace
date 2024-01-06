@@ -5,12 +5,11 @@ from sqlalchemy.future import select
 from typing import List
 
 from app.models.other_checklist_models import OtherCheckList
-from app.schemas.other_checklist_schemas import OtherCheckListCreate
+from app.schemas.other_checklist_schemas import OtherCheckListCreate, OtherCheckListUpdate
 from app.auth.auth_bearer_employee import JWTBearerEmployee
 from app.auth.auth_handle import token_employee_required
 from database.conn import async_session
 from database import conn
-
 
 
 router = APIRouter()
@@ -22,17 +21,20 @@ router = APIRouter()
 async def create_other_checklist(otherchecklist: OtherCheckListCreate, 
                                  dependencies=Depends(JWTBearerEmployee()), 
                                  session: AsyncSession = Depends(conn.get_async_session)):    
-    result = await session.execute(select(OtherCheckList).where(OtherCheckList.equipment == otherchecklist.equipment))
-    existing_otherchecklist = result.scalar()
-    if existing_otherchecklist: 
-        return {"message": f"Já temos algo igual no nosso banco de dados {existing_otherchecklist.id}"}
     try: 
-        new_otherchecklist = OtherCheckList(employee_id=otherchecklist.employee_id, equipment=otherchecklist.equipment)
+        async with session.begin():
+            result = await session.execute(select(OtherCheckList).where(OtherCheckList.equipment == otherchecklist.equipment))
+            existing_otherchecklist = result.scalar()
 
-        session.add(new_otherchecklist)
-        await session.commit()
+            if existing_otherchecklist: 
+                return {"message": f"Já temos algo igual no nosso banco de dados {existing_otherchecklist.id}"}
+            
+            new_otherchecklist = OtherCheckList(employee_id=otherchecklist.employee_id, equipment=otherchecklist.equipment)
 
-        return {"message":"Checklist para instalação criado com sucesso!"}
+            session.add(new_otherchecklist)
+            await session.commit()
+
+            return {"message":"Checklist para instalação criado com sucesso!"}
     
     except Exception as e:
         session.rollback()
@@ -44,12 +46,14 @@ async def create_other_checklist(otherchecklist: OtherCheckListCreate,
 @router.get("/list-other-checklist", status_code=status.HTTP_200_OK)
 async def list_other_checklist(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
-        query = select(OtherCheckList)
-        result = await session.execute(query)
-        otherchecklist: List[OtherCheckListCreate] = result.scalars().all()
-        return otherchecklist
+        async with session.begin():
+            query = select(OtherCheckList)
+            result = await session.execute(query)
+            otherchecklist: List[OtherCheckListCreate] = result.scalars().all()
+            return otherchecklist
+        
     except Exception as e:
-        session.rollback()
+        await session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
     
 
@@ -59,10 +63,40 @@ async def list_other_checklist(dependencies=Depends(JWTBearerEmployee()), sessio
 async def get_one_other_checklist(other_checklist_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     checklist_id = await session.execute(select(OtherCheckList).where(OtherCheckList.id == other_checklist_id))
     try: 
-        if checklist_id:
-            obj_os_construction = checklist_id.scalar_one()
-            return obj_os_construction
+        async with session.begin():
+            if checklist_id:
+                obj_os_construction = checklist_id.scalar_one()
+                return obj_os_construction
+            
     except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=f"{e}")
+    
+    
+@token_employee_required
+@async_session
+@router.put('/update-other-checklist/{other_checklist_id}', status_code=status.HTTP_202_ACCEPTED)
+async def update_construction(other_checklist_id: int, other_checklist: OtherCheckListUpdate, session: AsyncSession = Depends(conn.get_async_session)):
+    try:
+
+        async with session.begin():
+            checklist = await session.execute(select(OtherCheckList).where(OtherCheckList.id == other_checklist_id))
+            existing_checklist = checklist.scalars().first()
+
+            if existing_checklist:
+                if other_checklist.employee_id is not None:
+                    existing_checklist.employee_id = other_checklist.employee_id
+                else: 
+                    existing_checklist.employee_id = existing_checklist.employee_id
+                existing_checklist.equipment = other_checklist.equipment
+                existing_checklist.file_budget = other_checklist.file_budget
+                await session.commit()
+                return existing_checklist
+            else:
+                return {"message": "Obra não encontrada"}
+            
+    except Exception as e:
+        await session.rollback()
         raise HTTPException(status_code=500, detail=f"{e}")
     
 
@@ -72,26 +106,28 @@ async def get_one_other_checklist(other_checklist_id: int = None, dependencies=D
 async def delete_other_checklist(other_checklist_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     checklist_id = await session.execute(select(OtherCheckList).where(OtherCheckList.id == other_checklist_id))
     try: 
-        if checklist_id:
-            obj_other_checklist = checklist_id.scalar_one()
-            await session.delete(obj_other_checklist)
-            await session.commit()
-            return {"message": "checklist deletada com sucesso"}
+        async with session.begin():
+            if checklist_id:
+                obj_other_checklist = checklist_id.scalar_one()
+                await session.delete(obj_other_checklist)
+                await session.commit()
+                return {"message": "checklist deletada com sucesso"}
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"{e}")
 
 
-@async_session
-@router.post("/uploadfile/", status_code=status.HTTP_200_OK)
-async def create_upload_file(file: UploadFile = File(...), session: AsyncSession = Depends(conn.get_async_session)):
-    file_location = f"/home/ivan/Projects/homelabs/backend-homelabs-app/{file.filename}"
-    result = await session.execute(select(OtherCheckList))
-    with open(file_location, "wb+") as file_object:
-        file_object.write(file.file.read())
+# @async_session
+# @router.post("/uploadfile/", status_code=status.HTTP_200_OK)
+# async def create_upload_file(file: UploadFile = File(...), session: AsyncSession = Depends(conn.get_async_session)):
+#     file_location = f"/home/ivan/Projects/homelabs/backend-homelabs-app/{file.filename}"
+#     result = await session.execute(select(OtherCheckList))
+#     with open(file_location, "wb+") as file_object:
+#         file_object.write(file.file.read())
     
-    new_image = OtherCheckList(file_budget=file_location)
-    session.add(new_image)
-    await session.commit()
-    await session.refresh(new_image)
+#     new_image = OtherCheckList(file_budget=file_location)
+#     session.add(new_image)
+#     await session.commit()
+#     await session.refresh(new_image)
     
-    return {"filename": new_image.file_budget}
+#     return {"filename": new_image.file_budget}

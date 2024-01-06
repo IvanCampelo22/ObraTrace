@@ -1,26 +1,44 @@
-from app.models.checklist_auto_models import CheckListAuto
+from fastapi import Depends, HTTPException,status, APIRouter, UploadFile
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from typing import List
 
 from app.schemas.checlist_auto_schemas import CheckListAutoCreate
+from app.models.checklist_auto_models import CheckListAuto
 from app.auth.auth_bearer_employee import JWTBearerEmployee
 from app.auth.auth_handle import token_employee_required
-from fastapi import Depends, HTTPException,status, APIRouter, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import conn
 from database.conn import async_session
 
 
-
-
-router=APIRouter()
+router = APIRouter()
 
 
 @token_employee_required
 @async_session
-@router.post("/create-checklist-auto", status_code=status.HTTP_201_CREATED)
+@router.post("/create-checklist-auto", responses={
+    200: {
+        "description": "Checklist para automação criado com sucesso",
+        "content": {
+            "application/json": {
+                "example": [
+                    {   
+                            "employee_id": 1,
+                            "rele_type": "duas sessões, trẽs sessões", 
+                            "qtd_rele": 2,
+                            "qtd_cable": 1,
+                            "switch_type": "5 sessões",
+                            "qtd_switch": 1,
+                            "qtd_hub": 1, 
+                            "other_equipament": "rele multiuso"
+                    }
+                ]
+            }
+        },
+        404: {"description": "Insira dados válidos"}
+}}, status_code=status.HTTP_201_CREATED)
 async def create_checlist_auto(checlistauto: CheckListAutoCreate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):    
     result = await session.execute(select(CheckListAuto).where(CheckListAuto.rele_type == checlistauto.rele_type, CheckListAuto.qtd_rele == checlistauto.qtd_rele, CheckListAuto.qtd_cable == checlistauto.qtd_cable, CheckListAuto.switch_type == checlistauto.switch_type, CheckListAuto.qtd_hub == checlistauto.qtd_hub, CheckListAuto.other_equipament == checlistauto.other_equipament))
     existing_checlistauto = result.scalar()
@@ -32,13 +50,13 @@ async def create_checlist_auto(checlistauto: CheckListAutoCreate, dependencies=D
         session.add(new_checlistauto)
         await session.commit()
 
-        return {"message":"Checklist para instalação de automação criado com sucesso!"}
+        return new_checlistauto
     
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
     
-
+    
 @token_employee_required
 @async_session
 @router.get("/list-checklist-auto", status_code=status.HTTP_200_OK)

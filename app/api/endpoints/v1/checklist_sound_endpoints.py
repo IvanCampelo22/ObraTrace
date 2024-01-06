@@ -17,7 +17,25 @@ router=APIRouter()
 
 @token_employee_required
 @async_session
-@router.post("/create-checklist-sound", status_code=status.HTTP_201_CREATED)
+@router.post("/create-checklist-sound", responses={
+    200: {
+        "description": "Checklist para som criado com sucesso",
+        "content": {
+            "application/json": {
+                "example": [
+                    {   
+                            "qtd_sound_box": 6,
+                            "qtd_cable": 2,
+                            "qtd_conn": 2,
+                            "qtd_ampli": 1,
+                            "qtd_receiver": 0,
+                            "other_equipament": "Microfone"
+                    }
+                ]
+            }
+        },
+        404: {"description": "Insira dados válidos"}
+}}, status_code=status.HTTP_201_CREATED)
 async def create_checlist_sound(checlistsound: CheckListSoundCreate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):    
 
     result = await session.execute(select(CheckListSound).where(CheckListSound.qtd_sound_box == checlistsound.qtd_sound_box, CheckListSound.qtd_cable == checlistsound.qtd_cable, CheckListSound.qtd_conn == checlistsound.qtd_conn, CheckListSound.qtd_ampli == checlistsound.qtd_ampli, CheckListSound.qtd_receiver == checlistsound.qtd_receiver,  CheckListSound.other_equipament == checlistsound.other_equipament))

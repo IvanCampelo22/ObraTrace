@@ -1,9 +1,8 @@
 from pydantic import BaseModel
-from app.schemas.client_adress_schemas import ClientAdressSchema
-
+from typing import Optional
 
 class ConstructionBase(BaseModel):
-    is_done: bool = False 
+    is_done: Optional[bool] = False 
 
 
 class ConstructionCreate(ConstructionBase):
@@ -14,15 +13,16 @@ class ConstructionCreate(ConstructionBase):
 
 class ConstructionSchema(ConstructionBase):
     id: int 
-    client_adress: ClientAdressSchema
 
     class Config:
         orm_mode = True
 
-    def client_adress():
-        return ClientAdressSchema
 
 class ConstructionUpdate(ConstructionBase):
+    employee_id: Optional[int] = None  
+    client_id: Optional[int] = None 
+    client_adress_id: Optional[int] = None 
+
     class Config:
         orm_mode = True
 

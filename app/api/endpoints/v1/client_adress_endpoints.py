@@ -12,12 +12,33 @@ from database.conn import async_session
 from database import conn
 
 
-router=APIRouter()
+router = APIRouter()
 
 
 @token_employee_required
 @async_session
-@router.post("/register-client-adress", status_code=status.HTTP_201_CREATED)
+@router.post("/register-client-adress", responses={
+    200: {
+        "description": "Endereço do cliente cadastrado com sucesso",
+        "content": {
+            "application/json": {
+                "example": [
+                    {   
+                            "client_id": 1,
+                            "employee_id": 1,
+                            "adress": "Rua das Ninfas",
+                            "number": "04",
+                            "city": "Recife",
+                            "state": "PE",
+                            "name_building": "Jardim Oliveira",
+                            "reference_point": "Ao lado do petshop",
+                            "complement": "Depois de sair da BR, continue à esquerda"
+                    }
+                ]
+            }
+        },
+        404: {"description": "Insira dados válidos"}
+}}, status_code=status.HTTP_201_CREATED)
 async def register_client_adress(adress: ClientAdressCreate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(ClientAdress).where(ClientAdress.adress == adress.adress, ClientAdress.city == adress.city, ClientAdress.number == adress.number, ClientAdress.state == adress.state, ClientAdress.name_building == adress.name_building, ClientAdress.reference_point == adress.reference_point, ClientAdress.complement == adress.complement))
     existing_adress = result.scalar()

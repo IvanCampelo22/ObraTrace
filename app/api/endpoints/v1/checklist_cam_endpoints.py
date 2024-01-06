@@ -17,7 +17,28 @@ router = APIRouter()
 
 @token_employee_required
 @async_session
-@router.post("/create-checklist-cam", status_code=status.HTTP_201_CREATED)
+@router.post("/create-checklist-cam", responses={
+    200: {
+        "description": "Checklist para câmeras criado com sucesso",
+        "content": {
+            "application/json": {
+                "example": [
+                    {   
+                            "employee_id": 1,
+                            "qtd_cam": 2,
+                            "qtd_box_cable": 1,
+                            "qtd_rca": 8,
+                            "qtd_p4": 4,
+                            "qtd_dvr": 1,
+                            "qtd_hd": 1,
+                            "hds_size": 1,
+                            "other_equipament": "cabo utp, dois conectores rj"
+                    }
+                ]
+            }
+        },
+        404: {"description": "Insira dados válidos"}
+}}, status_code=status.HTTP_201_CREATED)
 async def create_checlist_cam(checlistcam: CheckListCamCreate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):    
     result = await session.execute(select(CheckListCam).where(CheckListCam.qtd_cam == checlistcam.qtd_cam, CheckListCam.qtd_box_cable == checlistcam.qtd_box_cable, CheckListCam.qtd_rca == checlistcam.qtd_rca, CheckListCam.qtd_p4 == checlistcam.qtd_p4, CheckListCam.qtd_dvr == checlistcam.qtd_dvr, CheckListCam.qtd_hd == checlistcam.qtd_hd, CheckListCam.hds_size == checlistcam.hds_size, CheckListCam.other_equipament == checlistcam.other_equipament))
     existing_checlistcam = result.scalar()
