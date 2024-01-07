@@ -40,17 +40,19 @@ router = APIRouter()
         404: {"description": "Insira dados válidos"}
 }}, status_code=status.HTTP_201_CREATED)
 async def create_checlist_auto(checlistauto: CheckListAutoCreate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):    
-    result = await session.execute(select(CheckListAuto).where(CheckListAuto.rele_type == checlistauto.rele_type, CheckListAuto.qtd_rele == checlistauto.qtd_rele, CheckListAuto.qtd_cable == checlistauto.qtd_cable, CheckListAuto.switch_type == checlistauto.switch_type, CheckListAuto.qtd_hub == checlistauto.qtd_hub, CheckListAuto.other_equipament == checlistauto.other_equipament))
-    existing_checlistauto = result.scalar()
-    if existing_checlistauto: 
-        return {"message": f"Já temos algo igual no nosso banco de dados {existing_checlistauto.id}"}
     try: 
-        new_checlistauto = CheckListAuto(employee_id=checlistauto.employee_id, rele_type=checlistauto.rele_type, qtd_rele=checlistauto.qtd_rele, qtd_cable=checlistauto.qtd_cable, switch_type=checlistauto.switch_type, qtd_switch=checlistauto.qtd_switch, qtd_hub=checlistauto.qtd_hub, other_equipament=checlistauto.other_equipament)
+        async with session.begin():
+            result = await session.execute(select(CheckListAuto).where(CheckListAuto.rele_type == checlistauto.rele_type, CheckListAuto.qtd_rele == checlistauto.qtd_rele, CheckListAuto.qtd_cable == checlistauto.qtd_cable, CheckListAuto.switch_type == checlistauto.switch_type, CheckListAuto.qtd_hub == checlistauto.qtd_hub, CheckListAuto.other_equipament == checlistauto.other_equipament))
+            existing_checlistauto = result.scalar()
+             
+            if existing_checlistauto: 
+                return {"message": f"Já temos algo igual no nosso banco de dados {existing_checlistauto.id}"}
+            new_checlistauto = CheckListAuto(employee_id=checlistauto.employee_id, rele_type=checlistauto.rele_type, qtd_rele=checlistauto.qtd_rele, qtd_cable=checlistauto.qtd_cable, switch_type=checlistauto.switch_type, qtd_switch=checlistauto.qtd_switch, qtd_hub=checlistauto.qtd_hub, other_equipament=checlistauto.other_equipament)
 
-        session.add(new_checlistauto)
-        await session.commit()
+            session.add(new_checlistauto)
+            await session.commit()
 
-        return new_checlistauto
+            return new_checlistauto
     
     except Exception as e:
         session.rollback()
@@ -104,10 +106,11 @@ async def create_checlist_auto(checlistauto: CheckListAutoCreate, dependencies=D
 }}, status_code=status.HTTP_200_OK)
 async def list_checklist_auto(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
-        query = select(CheckListAuto)
-        result = await session.execute(query)
-        checklist_auto: List[CheckListAutoCreate] = result.scalars().all()
-        return checklist_auto
+        async with session.begin():
+            query = select(CheckListAuto)
+            result = await session.execute(query)
+            checklist_auto: List[CheckListAutoCreate] = result.scalars().all()
+            return checklist_auto
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
@@ -155,8 +158,34 @@ async def get_one_checklist_auto(checklist_auto_id: int = None, dependencies=Dep
     
 @token_employee_required
 @async_session
-@router.put('/update-checklist-auto/{checklist_auto_id}', status_code=status.HTTP_202_ACCEPTED)
-async def update_construction(checklist_auto_id: int, checklistauto: CheckListAutoUpdate, session: AsyncSession = Depends(conn.get_async_session)):
+@router.put('/update-checklist-auto/{checklist_auto_id}', responses={
+    200: {
+        "description": "Checklist de automação atualizada com sucesso",
+        "content": {
+            "application/json": {
+                "example": [
+                    {   
+                        "client_id": 1,
+                        "adress": "Rua Do Futuro",
+                        "number": "04",
+                        "state": "PE",
+                        "reference_point": "Ao Lado do Pet Shop",
+                        "updated_at": "2023-12-15T19:28:23.043687",
+                        "id": 1,
+                        "employee_id": 7,
+                        "city": "Recife",
+                        "name_building": "Oscar Duval",
+                        "complement": "Prédio Preto",
+                        "created_at": "2023-12-15T19:28:23.043765"
+  
+                    }
+
+                ]
+            }
+        },
+        404: {"description": "Insira dados válidos"}
+}}, status_code=status.HTTP_202_ACCEPTED)
+async def update_checklist_auto(checklist_auto_id: int, checklistauto: CheckListAutoUpdate, session: AsyncSession = Depends(conn.get_async_session)):
     try:
         async with session.begin():
             checklist = await session.execute(select(CheckListAuto).where(CheckListAuto.id == checklist_auto_id))
@@ -206,11 +235,12 @@ async def update_construction(checklist_auto_id: int, checklistauto: CheckListAu
 async def delete_checklist_auto(checklist_auto_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     checklist_id = await session.execute(select(CheckListAuto).where(CheckListAuto.id == checklist_auto_id))
     try: 
-        if checklist_id:
-            obj_checklist = checklist_id.scalar_one()
-            await session.delete(obj_checklist)
-            await session.commit()
-            return {"message": "Checklist de automação deletado com sucesso"}
+        async with session.begin():
+            if checklist_id:
+                obj_checklist = checklist_id.scalar_one()
+                await session.delete(obj_checklist)
+                await session.commit()
+                return {"message": "Checklist de automação deletado com sucesso"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"{e}")
     

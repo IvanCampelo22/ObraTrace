@@ -36,20 +36,21 @@ router = APIRouter()
         },
         404: {"description": "Insira dados válidos"}
 }}, status_code=status.HTTP_201_CREATED)
-async def create_checlist_sound(checlistsound: CheckListSoundCreate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):    
-
-    result = await session.execute(select(CheckListSound).where(CheckListSound.qtd_sound_box == checlistsound.qtd_sound_box, CheckListSound.qtd_cable == checlistsound.qtd_cable, CheckListSound.qtd_conn == checlistsound.qtd_conn, CheckListSound.qtd_ampli == checlistsound.qtd_ampli, CheckListSound.qtd_receiver == checlistsound.qtd_receiver,  CheckListSound.other_equipament == checlistsound.other_equipament))
-    existing_checlistsound = result.scalar()
-    if existing_checlistsound: 
-        return {"message": f"Já temos algo igual no nosso banco de dados {existing_checlistsound.id}"}
+async def create_checklist_sound(checlistsound: CheckListSoundCreate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):    
     try: 
-        new_checlistsound = CheckListSound(employee_id=checlistsound.employee_id, qtd_sound_box=checlistsound.qtd_sound_box, qtd_cable=checlistsound.qtd_cable, qtd_conn=checlistsound.qtd_conn, qtd_ampli=checlistsound.qtd_ampli, qtd_receiver=checlistsound.qtd_receiver, other_equipament=checlistsound.other_equipament)
+        async with session.begin():
+            result = await session.execute(select(CheckListSound).where(CheckListSound.qtd_sound_box == checlistsound.qtd_sound_box, CheckListSound.qtd_cable == checlistsound.qtd_cable, CheckListSound.qtd_conn == checlistsound.qtd_conn, CheckListSound.qtd_ampli == checlistsound.qtd_ampli, CheckListSound.qtd_receiver == checlistsound.qtd_receiver,  CheckListSound.other_equipament == checlistsound.other_equipament))
+            existing_checlistsound = result.scalar()
+            if existing_checlistsound: 
+                return {"message": f"Já temos algo igual no nosso banco de dados {existing_checlistsound.id}"}
+            
+            new_checlistsound = CheckListSound(employee_id=checlistsound.employee_id, qtd_sound_box=checlistsound.qtd_sound_box, qtd_cable=checlistsound.qtd_cable, qtd_conn=checlistsound.qtd_conn, qtd_ampli=checlistsound.qtd_ampli, qtd_receiver=checlistsound.qtd_receiver, other_equipament=checlistsound.other_equipament)
 
-        session.add(new_checlistsound)
-        await session.commit()
-        await session.refresh()
+            session.add(new_checlistsound)
+            await session.commit()
+            await session.refresh()
 
-        return {"message":"Checklist para instalação de som criado com sucesso!"}
+            return {"message":"Checklist para instalação de som criado com sucesso!"}
     
     except Exception as e:
         session.rollback()
@@ -58,13 +59,42 @@ async def create_checlist_sound(checlistsound: CheckListSoundCreate, dependencie
 
 @token_employee_required
 @async_session
-@router.get("/list-checklist-sound", status_code=status.HTTP_200_OK)
+@router.get("/list-checklist-sound", responses={
+    200: {
+        "description": "Lista de checklist para som",
+        "content": {
+            "application/json": {
+                "example": [
+                    {       
+                            "id": 1,
+                            "qtd_sound_box": 6,
+                            "qtd_cable": 2,
+                            "qtd_conn": 2,
+                            "qtd_ampli": 1,
+                            "qtd_receiver": 0,
+                            "other_equipament": "Microfone"
+                    },
+                    {       
+                            "id": 2,
+                            "qtd_sound_box": 8,
+                            "qtd_cable": 2,
+                            "qtd_conn": 2,
+                            "qtd_ampli": 1,
+                            "qtd_receiver": 0,
+                            "other_equipament": "Microfone"
+                    }
+                ]
+            }
+        },
+        404: {"description": "Insira dados válidos"}
+}}, status_code=status.HTTP_200_OK)
 async def list_checklist_sound(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
-        query = select(CheckListSound)
-        result = await session.execute(query)
-        checklist_sound: List[CheckListSoundCreate] = result.scalars().all()
-        return checklist_sound
+        async with session.begin():
+            query = select(CheckListSound)
+            result = await session.execute(query)
+            checklist_sound: List[CheckListSoundCreate] = result.scalars().all()
+            return checklist_sound
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
@@ -74,11 +104,13 @@ async def list_checklist_sound(dependencies=Depends(JWTBearerEmployee()), sessio
 @async_session
 @router.get("/get-one-checklist-sound", status_code=status.HTTP_200_OK)
 async def get_one_checklist_sound(checklist_sound_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
-    checklist_id = await session.execute(select(CheckListSound).where(CheckListSound.id == checklist_sound_id))
     try: 
-        if checklist_id:
-            obj_checklist = checklist_id.scalar_one()
-            return obj_checklist
+        async with session.begin():
+            checklist_id = await session.execute(select(CheckListSound).where(CheckListSound.id == checklist_sound_id))
+            if checklist_id:
+                obj_checklist = checklist_id.scalar_one()
+                return obj_checklist
+            
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"{e}")
     
@@ -94,7 +126,9 @@ async def delete_checklist_sound(checklist_sound_id: int = None, dependencies=De
             await session.delete(obj_checklist)
             await session.commit()
             return {"message": "Checklist deletado com sucesso"}
+        
     except Exception as e:
+        session.rollback()
         raise HTTPException(status_code=500, detail=f"{e}")
 
 
