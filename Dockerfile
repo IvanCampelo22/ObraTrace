@@ -16,8 +16,6 @@ COPY . .
 # Expose the port on which the application will run
 EXPOSE 8080
 
-RUN alembic revision -m "migration"
-
 RUN alembic upgrade head --sql
 
 RUN alembic upgrade head

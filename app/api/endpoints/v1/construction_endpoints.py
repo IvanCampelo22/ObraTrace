@@ -35,16 +35,12 @@ router = APIRouter()
         },
         404: {"description": "Insira dados válidos"}
 }},  status_code=status.HTTP_201_CREATED)
-async def register_construction(construction: ConstructionCreate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
-    try: 
-
-        async with session.begin():
-            result = await session.execute(select(Constructions).where(Constructions.client_id == construction.client_id, Constructions.employee_id == construction.employee_id, Constructions.client_adress_id == construction.client_adress_id))
-            existing_adress = result.scalar()
-
-            if existing_adress: 
+async def register_construction(construction: ConstructionCreate, session: AsyncSession = Depends(conn.get_async_session)):
+    result = await session.execute(select(Constructions).where(Constructions.client_id == construction.client_id, Constructions.employee_id == construction.employee_id, Constructions.client_adress_id == construction.client_adress_id))
+    existing_adress = result.scalar()
+    if existing_adress: 
                 raise HTTPException(status_code=400, detail="Já temos essa obra registrada")
-                    
+    try:                   
             new_adress = Constructions(client_id=construction.client_id, employee_id=construction.employee_id, client_adress_id=construction.client_adress_id)
             session.add(new_adress)
             await session.commit()
@@ -52,7 +48,7 @@ async def register_construction(construction: ConstructionCreate, dependencies=D
             return {"message":"Obra registrada com sucesso"}
     
     except Exception as e:
-        session.rollback()
+        await session.rollback()
         raise HTTPException(status_code=500, detail=f'{e}')
 
 
@@ -83,13 +79,13 @@ async def get_one_checklist(construction_id: int = None, dependencies=Depends(JW
     try: 
 
         async with session.begin():
-            maintenance_id = await session.execute(select(Constructions).where(Constructions.id == construction_id).options(joinedload(Constructions.client_adress)).\
+            construction = await session.execute(select(Constructions).where(Constructions.id == construction_id).options(joinedload(Constructions.client_adress)).\
                                                    options(joinedload(Constructions.employee)).\
                                                     options(joinedload(Constructions.os_construction)))
-            maintenance_id = maintenance_id.unique()
+            construction = construction.unique()
 
-            if maintenance_id:
-                obj_construction = maintenance_id.scalar_one()
+            if construction:
+                obj_construction = construction.scalar_one()
                 return obj_construction
             
     except Exception as e:

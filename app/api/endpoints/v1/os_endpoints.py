@@ -2,6 +2,7 @@ from fastapi import APIRouter, File, UploadFile, Depends, status, HTTPException
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
 from typing import List
 
 from app.schemas.os_schemas import OsCreate
@@ -78,8 +79,9 @@ async def register_os_(os: OsCreate, dependencies=Depends(JWTBearerEmployee()), 
 @router.get("/list-os", status_code=status.HTTP_200_OK)
 async def list_os(session: AsyncSession = Depends(conn.get_async_session)):
     try: 
-        query = select(Os)
+        query = select(Os).options(joinedload(Os.client))
         result = await session.execute(query)
+        result = result.unique()
         os: List[OsCreate] = result.scalars().all()
         return os
     except Exception as e:
@@ -90,12 +92,15 @@ async def list_os(session: AsyncSession = Depends(conn.get_async_session)):
 @token_employee_required
 @async_session
 @router.get("/get-one-os", status_code=status.HTTP_200_OK)
-async def get_one_os(os__id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
-    os_id = await session.execute(select(Os).where(Os.id == os__id))
+async def get_one_os(os_id: int = None, session: AsyncSession = Depends(conn.get_async_session)):
     try: 
-        if os_id:
-            obj_os_construction = os_id.scalar_one()
-            return obj_os_construction
+        async with session.begin():
+            os = await session.execute(select(Os).where(Os.id == os_id).options(joinedload(Os.client)))                    
+            os = os.unique()
+
+            if os_id:
+                obj_construction = os.scalar_one()
+                return obj_construction
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"{e}")
     
