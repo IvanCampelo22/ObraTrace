@@ -54,7 +54,7 @@ async def register_user(client: ClientCreate, session: AsyncSession = Depends(co
     session.add(new_user)
     await session.commit()
 
-    return {"message":"cliente criado com sucesso"}
+    return new_user.id
 
 
 @router.post('/login', responses={
