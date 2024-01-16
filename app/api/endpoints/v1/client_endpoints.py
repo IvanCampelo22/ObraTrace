@@ -7,7 +7,7 @@ from jose import jwt
 from datetime import datetime
 from typing import List
 
-from app.schemas.client_schemas import ClientCreate, TokenClientSchema, requestdetails, changepassword
+from app.schemas.client_schemas import ClientCreate, ClientUpdate, TokenClientSchema, requestdetails, changepassword
 from app.models.client_models import Client, TokenTableClient
 from app.auth.auth_bearer_client import JWTBearerClient
 from app.auth.auth_handle import get_hashed_password, create_access_token,create_refresh_token,verify_password, token_client_required
@@ -106,6 +106,52 @@ async def getusers(dependencies=Depends(JWTBearerClient()), db: AsyncSession = D
         user: List[ClientCreate] = result.scalars().unique().all()
 
         return user
+    
+
+@token_client_required
+@async_session
+@router.put('/update-client/{client_id}', responses={
+    200: {
+        "description": "Cliente com sucesso",
+        "content": {
+            "application/json": {
+                "example": [
+                    {   
+                        "username": "João",
+                        "email": "joão@gmail.com"
+  
+                    }
+
+                ]
+            }
+        },
+        404: {"description": "Insira dados válidos"}
+}}, status_code=status.HTTP_202_ACCEPTED)
+async def update_client(client_id: int, client_update: ClientUpdate, session: AsyncSession = Depends(conn.get_async_session)):
+    try:
+        async with session.begin():
+            client = await session.execute(select(Client).where(Client.id == client_id))
+            existing_client = client.scalars().first()
+
+            if existing_client:
+                if client_update.username is not None:
+                    existing_client.username = client_update.username
+                else: 
+                    existing_client.username = existing_client.username
+
+                if client_update.email is not None:
+                    existing_client.email = client_update.email
+                else: 
+                    existing_client.email = existing_client.email                
+    
+                await session.commit()
+                return existing_client
+            else:
+                return {"message": "Cliente não encontrado"}
+            
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=f"{e}")
     
 
 @router.post('/change-password', status_code=status.HTTP_202_ACCEPTED)

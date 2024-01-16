@@ -17,9 +17,6 @@ class Client(ClientBase):
 class ClientUpdate(BaseModel):
     username: Optional[str] = None
     email: Optional[str] = None 
-    password: Optional[str] = None 
-    is_activate: Optional[str] = None
-    
 
 class requestdetails(BaseModel):
     email:str
