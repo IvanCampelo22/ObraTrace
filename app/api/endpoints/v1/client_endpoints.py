@@ -2,6 +2,7 @@ from fastapi import Depends, HTTPException,status, APIRouter
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
 
 from jose import jwt
 from datetime import datetime
@@ -98,11 +99,14 @@ async def login(request: requestdetails, session: AsyncSession = Depends(conn.ge
 
 
 @token_client_required
+@async_session
 @router.get('/getusers', status_code=status.HTTP_200_OK)
 async def getusers(dependencies=Depends(JWTBearerClient()), db: AsyncSession = Depends(conn.get_async_session)):
     async with db as session:
-        query = select(Client)
+
+        query = select(Client).options(joinedload(Client.client_adress))
         result = await session.execute(query)
+        result = result.unique()
         user: List[ClientCreate] = result.scalars().unique().all()
 
         return user

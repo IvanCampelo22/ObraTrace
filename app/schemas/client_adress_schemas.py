@@ -1,7 +1,8 @@
 from pydantic import BaseModel
 from app.schemas.client_schemas import Client
 from app.schemas.employee_schemas import Employee
-import datetime
+from typing import Optional 
+
 
 class ClientAdressBase(BaseModel):
     client_id: int
@@ -25,4 +26,15 @@ class ClientAdressSchema(BaseModel):
 
     class Config:
         orm_mode = True
+        
 
+class ClientAdressUpdate(BaseModel):
+    client_id: Optional[int] = None 
+    employee_id: Optional[int] = None 
+    adress: Optional[str] = None  
+    number: Optional[str] = None  
+    city: Optional[str] = None  
+    state: Optional[str] = None  
+    name_building: Optional[str] = None
+    reference_point: Optional[str] = None
+    complement: Optional[str] = None
