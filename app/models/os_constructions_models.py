@@ -21,7 +21,6 @@ class OsConstructions(Base):
     scheduling = Column(DateTime, nullable=True)
     end_date = Column(DateTime, nullable=True)
     info = Column(String, nullable=True)
-    solution = Column(String, nullable=True)
     sale = Column(String, nullable=True)
     signature_emplooye = Column(String(120), nullable=True)
     signature_client = Column(String(120), nullable=True)

@@ -28,3 +28,21 @@ class OsCreate(OsBase):
 
 class Os:
     id: int
+
+class OsUpdate(BaseModel):
+    employee_id: Optional[int] = None  
+    client_id: Optional[int] = None  
+    client_adress_id: Optional[int] = None 
+    os_type: Optional[OsTypeEnum] = None
+    checklist_cam_id: Optional[int] = None
+    checklist_auto_id: Optional[int] = None 
+    checklist_sound_id: Optional[int] = None 
+    other_checklist_id: Optional[int] = None
+    scheduling: Optional[date] = None 
+    end_date: Optional[date] = None
+    info: Optional[str] = None 
+    solution: Optional[str] = None
+    sale: Optional[str] = None 
+    signature_emplooye: Optional[str] = None
+    signature_client: Optional[str] = None
+    is_active: Optional[bool] = None

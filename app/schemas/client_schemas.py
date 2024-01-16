@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 import datetime
 
 class ClientBase(BaseModel):
@@ -12,6 +13,13 @@ class ClientCreate(ClientBase):
 class Client(ClientBase):
     id: int 
 
+
+class ClientUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None 
+    password: Optional[str] = None 
+    is_activate: Optional[str] = None
+    
 
 class requestdetails(BaseModel):
     email:str

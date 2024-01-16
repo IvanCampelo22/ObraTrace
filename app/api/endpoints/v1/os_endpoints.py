@@ -5,7 +5,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 from typing import List
 
-from app.schemas.os_schemas import OsCreate
+from app.schemas.os_schemas import OsCreate, OsUpdate
 from app.auth.auth_bearer_employee import JWTBearerEmployee
 from app.auth.auth_handle import token_employee_required
 from app.models.os_models import Os
@@ -102,6 +102,90 @@ async def get_one_os(os_id: int = None, session: AsyncSession = Depends(conn.get
                 obj_construction = os.scalar_one()
                 return obj_construction
     except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
+    
+    
+@token_employee_required
+@async_session
+@router.put('/update-os/{os_id}', responses={
+    200: {
+        "description": "Ordem de Serviço atualizada com sucesso",
+        "content": {
+            "application/json": {
+                "example": [
+                    {   
+                        "employee_id": 1,
+                        "client_id": 1,
+                        "client_adress_id": 1, 
+                        "checklist_cam_id": 1, 
+                        "checklist_auto_id": 1, 
+                        "checklist_sound_id": 1, 
+                        "other_checklist_id": 1, 
+                        "os_type": "Instalação",
+                        "scheduling": "2024-01-01",
+                        "end_date": "2024-01-12",
+                        "info": "instalar duas câmeras",
+                        "solution": "As duas câmeras foram instaladas",
+                        "sale": "O cliente precisa de um hd maior",
+                        "signature_emplooye": "Maria",
+                        "signature_client": "João",
+                        "update_at": "2024-01-03 10:12:49.17512",
+                        "created_at": "2024-01-03 10:12:49.17512",
+                        "is_active": True
+                    }
+
+                ]
+            }
+        },
+        404: {"description": "Insira dados válidos"}
+}}, status_code=status.HTTP_202_ACCEPTED)
+async def update_os(os_id: int, os_update: OsUpdate, session: AsyncSession = Depends(conn.get_async_session)):
+    try:
+        async with session.begin():
+            os = await session.execute(select(Os).where(Os.id == os_id))
+            existing_os = os.scalars().first()
+
+            if existing_os:
+                if os_update.employee_id is not None:
+                    existing_os.employee_id = os_update.employee_id
+                else: 
+                    existing_os.employee_id = existing_os.employee_id
+            
+                if os_update.client_id is not None: 
+                    existing_os.client_id = os_update.client_id
+                else: 
+                    existing_os.client_id = existing_os.client_id
+
+                if os_update.client_adress_id is not None:
+                    existing_os.client_adress_id = os_update.client_adress_id
+                else: 
+                    existing_os.client_adress_id = existing_os.client_adress_id
+
+                if os_update.os_type is not None: 
+                    existing_os.os_type = os_update.os_type
+                else:
+                    existing_os.os_type = existing_os.os_type
+
+
+                existing_os.checklist_cam_id = os_update.checklist_cam_id
+                existing_os.checklist_auto_id = os_update.checklist_auto_id
+                existing_os.checklist_sound_id = os_update.checklist_sound_id
+                existing_os.other_checklist_id = os_update.other_checklist_id
+                existing_os.scheduling = os_update.scheduling 
+                existing_os.end_date = os_update.end_date
+                existing_os.info = os_update.info
+                existing_os.sale = os_update.sale
+                existing_os.signature_emplooye = os_update.signature_emplooye
+                existing_os.signature_client = os_update.signature_client
+                existing_os.is_active = os_update.is_active
+        
+                await session.commit()
+                return existing_os
+            else:
+                return {"message": "Ordem de Serviço não encontrada"}
+            
+    except Exception as e:
+        await session.rollback()
         raise HTTPException(status_code=500, detail=f"{e}")
     
 
