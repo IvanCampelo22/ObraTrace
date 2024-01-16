@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from typing import List
 
-from app.schemas.checlist_sound_schemas import CheckListSoundCreate
+from app.schemas.checlist_sound_schemas import CheckListSoundCreate, CheckListSoundUpdate
 from app.models.checklist_sound_models import CheckListSound
 from app.auth.auth_bearer_employee import JWTBearerEmployee
 from app.auth.auth_handle import token_employee_required
@@ -112,6 +112,59 @@ async def get_one_checklist_sound(checklist_sound_id: int = None, dependencies=D
                 return obj_checklist
             
     except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
+    
+
+@token_employee_required
+@async_session
+@router.put('/update-checklist-som/{checklist_cam_id}', responses={
+    200: {
+        "description": "Checklist de som atualizada com sucesso",
+        "content": {
+            "application/json": {
+                "example": [
+                    {   
+                        "employee_id": 1,
+                        "qtd_sound_box": 2,
+                        "qtd_cable": 1,
+                        "qtd_conn": 1,
+                        "qtd_ampli": 1,
+                        "qtd_receiver": 1,
+                        "other_equipament": "Microfone"
+
+                    }
+
+                ]
+            }
+        },
+        404: {"description": "Insira dados válidos"}
+}}, status_code=status.HTTP_202_ACCEPTED)
+async def update_checklist_sound(checklist_sound_id: int, checklistsound: CheckListSoundUpdate, session: AsyncSession = Depends(conn.get_async_session)):
+    try:
+        async with session.begin():
+            checklist = await session.execute(select(CheckListSound).where(CheckListSound.id == checklist_sound_id))
+            existing_checklist = checklist.scalars().first()
+
+            if existing_checklist:
+                if checklistsound.employee_id is not None:
+                    existing_checklist.employee_id = checklistsound.employee_id
+                else: 
+                    existing_checklist.employee_id = existing_checklist.employee_id
+
+                existing_checklist.qtd_sound_box = checklistsound.qtd_sound_box
+                existing_checklist.qtd_cable = checklistsound.qtd_cable
+                existing_checklist.qtd_conn = checklistsound.qtd_conn
+                existing_checklist.qtd_ampli = checklistsound.qtd_ampli
+                existing_checklist.qtd_receiver = checklistsound.qtd_receiver
+                existing_checklist.other_equipament = checklistsound.other_equipament
+
+                await session.commit()
+                return existing_checklist
+            else:
+                return {"message": "Checklist não encontrado"}
+            
+    except Exception as e:
+        await session.rollback()
         raise HTTPException(status_code=500, detail=f"{e}")
     
 
