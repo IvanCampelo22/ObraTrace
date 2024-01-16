@@ -1,10 +1,13 @@
 from pydantic import BaseModel
 import datetime
 from enum import Enum
+from typing import Optional
+
 
 class WorkTypeEnum(str, Enum):
     Comercial = "Comercial"
     Técnico = "Técnico"
+
 
 class EmployeeBase(BaseModel):
     username: str 
@@ -12,11 +15,19 @@ class EmployeeBase(BaseModel):
     password: str
     work_type: WorkTypeEnum
 
+
 class EmployeeCreate(EmployeeBase):
     is_active: bool
 
+
 class Employee(EmployeeBase):
     id = int 
+
+
+class EmployeeUpdate(BaseModel):
+    username: Optional[str] = None 
+    email: Optional[str] = None  
+    work_type: Optional[WorkTypeEnum] = None
 
 
 class requestdetails(BaseModel):

@@ -112,7 +112,7 @@ async def getusers(dependencies=Depends(JWTBearerClient()), db: AsyncSession = D
 @async_session
 @router.put('/update-client/{client_id}', responses={
     200: {
-        "description": "Cliente com sucesso",
+        "description": "Cliente atualizado com sucesso",
         "content": {
             "application/json": {
                 "example": [

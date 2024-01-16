@@ -7,7 +7,7 @@ from jose import jwt
 from datetime import datetime
 from typing import List
 
-from app.schemas.employee_schemas import EmployeeCreate, TokenEmployeeSchema, requestdetails, changepassword
+from app.schemas.employee_schemas import EmployeeCreate, EmployeeUpdate, TokenEmployeeSchema, requestdetails, changepassword
 from app.models.employees_models import Employees, TokenTableEmployees
 from app.auth.auth_bearer_employee import JWTBearerEmployee
 from app.auth.auth_handle import token_employee_required
@@ -108,6 +108,57 @@ async def getusers(dependencies=Depends(JWTBearerEmployee()), db: AsyncSession =
         user: List[EmployeeCreate] = result.scalars().unique().all()
 
         return user
+    
+
+@token_employee_required
+@async_session
+@router.put('/update-employee/{employee_id}', responses={
+    200: {
+        "description": "Funcionários atualizado com sucesso",
+        "content": {
+            "application/json": {
+                "example": [
+                    {   
+                        "username": "João",
+                        "email": "joão@gmail.com",
+                        "work_type": "Comercial"
+                    }
+
+                ]
+            }
+        },
+        404: {"description": "Insira dados válidos"}
+}}, status_code=status.HTTP_202_ACCEPTED)
+async def update_client(employee_id: int, employee_update: EmployeeUpdate, session: AsyncSession = Depends(conn.get_async_session)):
+    try:
+        async with session.begin():
+            employee = await session.execute(select(Employees).where(Employees.id == employee_id))
+            existing_employee = employee.scalars().first()
+
+            if existing_employee:
+                if employee_update.username is not None:
+                    existing_employee.username = employee_update.username
+                else: 
+                    existing_employee.username = existing_employee.username
+
+                if employee_update.email is not None:
+                    existing_employee.email = employee_update.email
+                else: 
+                    existing_employee.email = existing_employee.email            
+
+                if employee_update.work_type is not None:
+                    existing_employee.work_type = employee_update.work_type
+                else:
+                    existing_employee.work_type = existing_employee.work_type    
+    
+                await session.commit()
+                return existing_employee
+            else:
+                return {"message": "Funcionário não encontrado"}
+            
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=f"{e}")
     
 
 @router.post('/change-password')
