@@ -189,16 +189,22 @@ async def delete_os_constructions(os_constructions_id: int = None, dependencies=
         raise HTTPException(status_code=500, detail=f"{e}")
 
 
-# @async_session
-# @router.post("/uploadfile/", status_code=status.HTTP_200_OK)
-# async def create_upload_file(file: UploadFile = File(...), session: AsyncSession = Depends(conn.get_async_session)):
-#     file_location = f"some/directory/{file.filename}"
-#     with open(file_location, "wb+") as file_object:
-#         file_object.write(file.file.read())
-    
-#     new_image = OsConstructions(image=file_location)
-#     await session.add(new_image)
-#     await session.commit()
-#     await session.refresh(new_image)
-    
-#     return {"filename": new_image.image}
+@token_employee_required
+@async_session
+@router.post("/uploadfile/", status_code=status.HTTP_200_OK)
+async def create_upload_file(osconstruction_id: int, file: UploadFile = File(...), session: AsyncSession = Depends(conn.get_async_session)):
+    os = await session.execute(select(OsConstructions).where(OsConstructions.id == osconstruction_id))
+    existing_os = os.scalars().first()
+    try:
+        file_location = f"/home/ivan/Projects/homelabs/backend-homelabs-app{file.filename}"
+        with open(file_location, "wb+") as file_object:
+            file_object.write(file.file.read())
+
+        existing_os.image = file_location
+        await session.commit()
+        
+        return existing_os.image
+
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=f"{e}")

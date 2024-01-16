@@ -103,7 +103,7 @@ async def update_construction(other_checklist_id: int, other_checklist: OtherChe
                 else: 
                     existing_checklist.employee_id = existing_checklist.employee_id
                 existing_checklist.equipment = other_checklist.equipment
-                existing_checklist.file_budget = other_checklist.file_budget
+
                 await session.commit()
                 return existing_checklist
             else:
@@ -131,17 +131,23 @@ async def delete_other_checklist(other_checklist_id: int = None, dependencies=De
         raise HTTPException(status_code=500, detail=f"{e}")
 
 
-# @async_session
-# @router.post("/uploadfile/", status_code=status.HTTP_200_OK)
-# async def create_upload_file(file: UploadFile = File(...), session: AsyncSession = Depends(conn.get_async_session)):
-#     file_location = f"/home/ivan/Projects/homelabs/backend-homelabs-app/{file.filename}"
-#     result = await session.execute(select(OtherCheckList))
-#     with open(file_location, "wb+") as file_object:
-#         file_object.write(file.file.read())
-    
-#     new_image = OtherCheckList(file_budget=file_location)
-#     session.add(new_image)
-#     await session.commit()
-#     await session.refresh(new_image)
-    
-#     return {"filename": new_image.file_budget}
+@token_employee_required
+@async_session
+@router.post("/uploadfile/", status_code=status.HTTP_200_OK)
+async def create_upload_file(checklist_id: int, file: UploadFile = File(...), session: AsyncSession = Depends(conn.get_async_session)):
+    checklist = await session.execute(select(OtherCheckList).where(OtherCheckList.id == checklist_id))
+    existing_checklist = checklist.scalars().first()
+    try:
+        file_location = f"/home/ivan/Projects/homelabs/backend-homelabs-app{file.filename}"
+        with open(file_location, "wb+") as file_object:
+            file_object.write(file.file.read())
+        
+        existing_checklist.file_budget=file_location
+
+        await session.commit()
+        
+        return existing_checklist.file_budget
+
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=f"{e}")

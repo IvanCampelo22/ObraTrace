@@ -196,12 +196,10 @@ async def create_upload_file(checklist_id: int, file: UploadFile = File(...), se
         with open(file_location, "wb+") as file_object:
             file_object.write(file.file.read())
         
-        new_image = CheckListSound(employee_id=existing_checklist.employee_id, file_budget=file_location)
-        session.add(new_image)
+        existing_checklist.file_budget=file_location
         await session.commit()
-        await session.refresh(new_image)
         
-        return {"filename": new_image.file_budget}
+        return existing_checklist.file_budget
 
     except Exception as e:
         await session.rollback()

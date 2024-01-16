@@ -189,7 +189,3 @@ async def delete_client_adress(client_adress_id: int = None, dependencies=Depend
         raise HTTPException(status_code=500, detail=f"{e}")
     
 
-# @router.put('update-client-adress{adress_id}')
-# async def update_client_adress(adress_id: int = None, session: AsyncSession = Depends(conn.get_async_session)):
-#     result = await session.execute(select(ClientAdress).filter_by(ClientAdress.id))
-#     return result
