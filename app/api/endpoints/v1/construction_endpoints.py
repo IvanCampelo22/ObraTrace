@@ -61,7 +61,8 @@ async def list_constructions(session: AsyncSession = Depends(conn.get_async_sess
         async with session.begin():
             query = select(Constructions).options(joinedload(Constructions.client_adress)).\
             options(joinedload(Constructions.employee)).\
-            options(joinedload(Constructions.os_construction))
+            options(joinedload(Constructions.os_construction)).\
+            options(joinedload(Constructions.client))
             result = await session.execute(query)
             result = result.unique()
             constructions: List[ConstructionSchema] = result.scalars().all()
@@ -81,7 +82,8 @@ async def get_one_checklist(construction_id: int = None, dependencies=Depends(JW
         async with session.begin():
             construction = await session.execute(select(Constructions).where(Constructions.id == construction_id).options(joinedload(Constructions.client_adress)).\
                                                    options(joinedload(Constructions.employee)).\
-                                                    options(joinedload(Constructions.os_construction)))
+                                                    options(joinedload(Constructions.os_construction)).\
+                                                    options(joinedload(Constructions.client)))
             construction = construction.unique()
 
             if construction:
