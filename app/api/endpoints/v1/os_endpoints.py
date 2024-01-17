@@ -173,6 +173,7 @@ async def update_os(os_id: int, os_update: OsUpdate, session: AsyncSession = Dep
                 existing_os.other_checklist_id = os_update.other_checklist_id
                 existing_os.scheduling = os_update.scheduling 
                 existing_os.end_date = os_update.end_date
+                existing_os.solution = os_update.solution
                 existing_os.info = os_update.info
                 existing_os.sale = os_update.sale
                 existing_os.signature_emplooye = os_update.signature_emplooye
