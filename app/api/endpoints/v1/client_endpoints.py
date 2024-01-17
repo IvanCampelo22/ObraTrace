@@ -114,6 +114,21 @@ async def getusers(dependencies=Depends(JWTBearerClient()), db: AsyncSession = D
 
 @token_client_required
 @async_session
+@router.get("/get-one-client", status_code=status.HTTP_200_OK)
+async def get_one_client(client_id: int = None, dependencies=Depends(JWTBearerClient()), session: AsyncSession = Depends(conn.get_async_session)):
+    client = await session.execute(select(Client).where(Client.id == client_id))
+    try: 
+        if client:
+            obj_adress = client.scalar_one()
+            return obj_adress
+        
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"{e}")
+    
+
+@token_client_required
+@async_session
 @router.put('/update-client/{client_id}', responses={
     200: {
         "description": "Cliente atualizado com sucesso",

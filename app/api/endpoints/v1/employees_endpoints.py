@@ -112,6 +112,21 @@ async def getusers(dependencies=Depends(JWTBearerEmployee()), db: AsyncSession =
 
 @token_employee_required
 @async_session
+@router.get("/get-one-employee", status_code=status.HTTP_200_OK)
+async def get_one_employee(employee_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
+    employee = await session.execute(select(Employees).where(Employees.id == employee_id))
+    try: 
+        if employee:
+            obj_adress = employee.scalar_one()
+            return obj_adress
+        
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"{e}")
+    
+
+@token_employee_required
+@async_session
 @router.put('/update-employee/{employee_id}', responses={
     200: {
         "description": "Funcionários atualizado com sucesso",
