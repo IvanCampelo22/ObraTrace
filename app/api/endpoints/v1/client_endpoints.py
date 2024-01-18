@@ -164,7 +164,7 @@ async def update_client(client_id: int, client_update: ClientUpdate, session: As
                     existing_client.email = existing_client.email                
     
                 await session.commit()
-                return existing_client
+                return existing_client.id
             else:
                 return {"message": "Cliente não encontrado"}
             
