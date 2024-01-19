@@ -127,3 +127,5 @@ venv/
 # JPEG
 *.jpg
 *.jpeg
+
+.env

@@ -8,7 +8,7 @@ PASSWORD = os.getenv('PASSWORD_OS')
 HOST = os.getenv('HOST_OS')
 NAME = os.getenv('NAME_OS')
 
-SQLALCHEMY_DATABASE_URL: str = f"postgresql+asyncpg://postgres:12345678@127.0.0.1/postgres"
+SQLALCHEMY_DATABASE_URL = f"postgresql+asyncpg://{USER}:{PASSWORD}@{HOST}/{NAME}"
 
 print(SQLALCHEMY_DATABASE_URL)
 
