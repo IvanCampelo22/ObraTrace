@@ -79,7 +79,7 @@ async def register_os_(os: OsCreate, dependencies=Depends(JWTBearerEmployee()), 
 @router.get("/list-os", status_code=status.HTTP_200_OK)
 async def list_os(session: AsyncSession = Depends(conn.get_async_session)):
     try: 
-        query = select(Os).options(joinedload(Os.client))
+        query = select(Os).options(joinedload(Os.client). options(joinedload(Os.client_adress)))
         result = await session.execute(query)
         result = result.unique()
         os: List[OsCreate] = result.scalars().all()
@@ -95,7 +95,7 @@ async def list_os(session: AsyncSession = Depends(conn.get_async_session)):
 async def get_one_os(os_id: int = None, session: AsyncSession = Depends(conn.get_async_session)):
     try: 
         async with session.begin():
-            os = await session.execute(select(Os).where(Os.id == os_id).options(joinedload(Os.client)))                    
+            os = await session.execute(select(Os).where(Os.id == os_id).options(joinedload(Os.client). options(joinedload(Os.client_adress))))                    
             os = os.unique()
 
             if os_id:

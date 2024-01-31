@@ -10,8 +10,6 @@ NAME = os.getenv('NAME_OS')
 
 SQLALCHEMY_DATABASE_URL = f"postgresql+asyncpg://{USER}:{PASSWORD}@{HOST}/{NAME}"
 
-print(SQLALCHEMY_DATABASE_URL)
-
 
 engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL, future=True, echo=True)
