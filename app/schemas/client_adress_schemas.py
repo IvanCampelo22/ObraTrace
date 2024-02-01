@@ -9,6 +9,7 @@ class ClientAdressBase(BaseModel):
     employee_id: int
     adress: str 
     number: str 
+    cep: str
     city: str 
     state: str 
 
@@ -32,7 +33,8 @@ class ClientAdressUpdate(BaseModel):
     client_id: Optional[int] = None 
     employee_id: Optional[int] = None 
     adress: Optional[str] = None  
-    number: Optional[str] = None  
+    number: Optional[str] = None 
+    cep: Optional[str] = None 
     city: Optional[str] = None  
     state: Optional[str] = None  
     name_building: Optional[str] = None

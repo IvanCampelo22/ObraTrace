@@ -41,7 +41,7 @@ router = APIRouter()
 }}, status_code=status.HTTP_201_CREATED)
 async def register_client_adress(adress: ClientAdressCreate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
-        new_adress = ClientAdress(client_id=adress.client_id, employee_id=adress.employee_id, adress=adress.adress, number=adress.number, city=adress.city, state=adress.state, name_building=adress.name_building, reference_point=adress.reference_point, complement=adress.complement)
+        new_adress = ClientAdress(client_id=adress.client_id, employee_id=adress.employee_id, adress=adress.adress, number=adress.number, cep=adress.cep, city=adress.city, state=adress.state, name_building=adress.name_building, reference_point=adress.reference_point, complement=adress.complement)
 
         session.add(new_adress)
         await session.commit()
@@ -56,7 +56,7 @@ async def register_client_adress(adress: ClientAdressCreate, dependencies=Depend
 @token_employee_required
 @async_session
 @router.get("/list-client-adresses", status_code=status.HTTP_200_OK)
-async def list_client_adresses(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
+async def list_client_adresses(session: AsyncSession = Depends(conn.get_async_session)):
     try: 
         query = select(ClientAdress)
         result = await session.execute(query)
@@ -150,6 +150,11 @@ async def update_client_adress(client_adress_id: int, clientadress: ClientAdress
                 else: 
                     existing_adress.number = existing_adress.number
 
+                if clientadress.cep is not None:
+                    existing_adress.cep = clientadress.cep
+                else:
+                    existing_adress.cep = existing_adress.cep
+                
                 if clientadress.city is not None:
                     existing_adress.city = clientadress.city
                 else: 
