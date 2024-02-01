@@ -12,6 +12,7 @@ class ClientAdress(Base):
     employee_id = Column(Integer, ForeignKey('Employees.id'), nullable=False)
     adress = Column(String(140), nullable=False)
     number = Column(String(20), nullable=False)
+    cep = Column(String(20), nullable=False)
     city = Column(String(120), nullable=False)
     state = Column(String(2), nullable=False)
     name_building = Column(String(120), nullable=True)

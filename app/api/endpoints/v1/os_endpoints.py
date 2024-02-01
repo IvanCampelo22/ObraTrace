@@ -77,9 +77,9 @@ async def register_os_(os: OsCreate, dependencies=Depends(JWTBearerEmployee()), 
 @token_employee_required
 @async_session
 @router.get("/list-os", status_code=status.HTTP_200_OK)
-async def list_os(session: AsyncSession = Depends(conn.get_async_session)):
+async def list_os(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
-        query = select(Os).options(joinedload(Os.client). options(joinedload(Os.client_adress)))
+        query = select(Os).options(joinedload(Os.client)).options(joinedload(Os.client_adress))
         result = await session.execute(query)
         result = result.unique()
         os: List[OsCreate] = result.scalars().all()
@@ -92,10 +92,10 @@ async def list_os(session: AsyncSession = Depends(conn.get_async_session)):
 @token_employee_required
 @async_session
 @router.get("/get-one-os", status_code=status.HTTP_200_OK)
-async def get_one_os(os_id: int = None, session: AsyncSession = Depends(conn.get_async_session)):
+async def get_one_os(dependencies=Depends(JWTBearerEmployee()), os_id: int = None, session: AsyncSession = Depends(conn.get_async_session)):
     try: 
         async with session.begin():
-            os = await session.execute(select(Os).where(Os.id == os_id).options(joinedload(Os.client). options(joinedload(Os.client_adress))))                    
+            os = await session.execute(select(Os).where(Os.id == os_id).options(joinedload(Os.client)).options(joinedload(Os.client_adress)))                   
             os = os.unique()
 
             if os_id:
@@ -139,7 +139,7 @@ async def get_one_os(os_id: int = None, session: AsyncSession = Depends(conn.get
         },
         404: {"description": "Insira dados válidos"}
 }}, status_code=status.HTTP_202_ACCEPTED)
-async def update_os(os_id: int, os_update: OsUpdate, session: AsyncSession = Depends(conn.get_async_session)):
+async def update_os(os_id: int, os_update: OsUpdate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try:
         async with session.begin():
             os = await session.execute(select(Os).where(Os.id == os_id))
@@ -208,7 +208,7 @@ async def delete_os(os__id: int = None, dependencies=Depends(JWTBearerEmployee()
 @token_employee_required
 @async_session
 @router.post("/uploadfile/", status_code=status.HTTP_200_OK)
-async def create_upload_file(os_id: int, file: UploadFile = File(...), session: AsyncSession = Depends(conn.get_async_session)):
+async def create_upload_file(os_id: int, dependencies=Depends(JWTBearerEmployee()), file: UploadFile = File(...), session: AsyncSession = Depends(conn.get_async_session)):
     os = await session.execute(select(Os).where(Os.id == os_id))
     existing_os = os.scalars().first()
     try:

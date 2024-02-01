@@ -130,7 +130,7 @@ async def get_one_os_constructions(dependencies=Depends(JWTBearerEmployee()), os
         },
         404: {"description": "Insira dados válidos"}
 }}, status_code=status.HTTP_202_ACCEPTED)
-async def update_os_construction(os_construction_id: int, os_construction_update: OsConstructionsUpdate, session: AsyncSession = Depends(conn.get_async_session)):
+async def update_os_construction(os_construction_id: int, os_construction_update: OsConstructionsUpdate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try:
         async with session.begin():
             os = await session.execute(select(OsConstructions).where(OsConstructions.id == os_construction_id))
@@ -192,7 +192,7 @@ async def delete_os_constructions(os_constructions_id: int = None, dependencies=
 @token_employee_required
 @async_session
 @router.post("/uploadfile/", status_code=status.HTTP_200_OK)
-async def create_upload_file(osconstruction_id: int, file: UploadFile = File(...), session: AsyncSession = Depends(conn.get_async_session)):
+async def create_upload_file(osconstruction_id: int, dependencies=Depends(JWTBearerEmployee()), file: UploadFile = File(...), session: AsyncSession = Depends(conn.get_async_session)):
     os = await session.execute(select(OsConstructions).where(OsConstructions.id == osconstruction_id))
     existing_os = os.scalars().first()
     try:

@@ -35,7 +35,7 @@ router = APIRouter()
         },
         404: {"description": "Insira dados válidos"}
 }},  status_code=status.HTTP_201_CREATED)
-async def register_construction(construction: ConstructionCreate, session: AsyncSession = Depends(conn.get_async_session)):
+async def register_construction(construction: ConstructionCreate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(Constructions).where(Constructions.client_id == construction.client_id, Constructions.employee_id == construction.employee_id, Constructions.client_adress_id == construction.client_adress_id))
     existing_adress = result.scalar()
     if existing_adress: 
@@ -55,7 +55,7 @@ async def register_construction(construction: ConstructionCreate, session: Async
 @token_employee_required
 @async_session
 @router.get("/list-construction", status_code=status.HTTP_200_OK, response_model=None)
-async def list_constructions(session: AsyncSession = Depends(conn.get_async_session)) -> any:
+async def list_constructions(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)) -> any:
     try:
 
         async with session.begin():
@@ -98,7 +98,7 @@ async def get_one_checklist(construction_id: int = None, dependencies=Depends(JW
 @token_employee_required
 @async_session
 @router.put('/update-construction/{construction_id}', status_code=status.HTTP_202_ACCEPTED)
-async def update_construction(construction_id: int, construction: ConstructionUpdate, session: AsyncSession = Depends(conn.get_async_session)):
+async def update_construction(construction_id: int, construction: ConstructionUpdate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try:
 
         async with session.begin():

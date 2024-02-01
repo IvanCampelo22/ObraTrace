@@ -139,7 +139,7 @@ async def get_one_checklist_sound(checklist_sound_id: int = None, dependencies=D
         },
         404: {"description": "Insira dados válidos"}
 }}, status_code=status.HTTP_202_ACCEPTED)
-async def update_checklist_sound(checklist_sound_id: int, checklistsound: CheckListSoundUpdate, session: AsyncSession = Depends(conn.get_async_session)):
+async def update_checklist_sound(checklist_sound_id: int, checklistsound: CheckListSoundUpdate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try:
         async with session.begin():
             checklist = await session.execute(select(CheckListSound).where(CheckListSound.id == checklist_sound_id))
@@ -188,7 +188,7 @@ async def delete_checklist_sound(checklist_sound_id: int = None, dependencies=De
 @token_employee_required
 @async_session
 @router.post("/uploadfile/", status_code=status.HTTP_200_OK)
-async def create_upload_file(checklist_id: int, file: UploadFile = File(...), session: AsyncSession = Depends(conn.get_async_session)):
+async def create_upload_file(checklist_id: int, dependencies=Depends(JWTBearerEmployee()), file: UploadFile = File(...), session: AsyncSession = Depends(conn.get_async_session)):
     checklist = await session.execute(select(CheckListSound).where(CheckListSound.id == checklist_id))
     existing_checklist = checklist.scalars().first()
     try:

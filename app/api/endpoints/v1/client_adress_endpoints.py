@@ -123,7 +123,7 @@ async def get_one_client_adress(client_id: int = None, dependencies=Depends(JWTB
         },
         404: {"description": "Insira dados válidos"}
 }}, status_code=status.HTTP_202_ACCEPTED)
-async def update_client_adress(client_adress_id: int, clientadress: ClientAdressUpdate, session: AsyncSession = Depends(conn.get_async_session)):
+async def update_client_adress(client_adress_id: int, clientadress: ClientAdressUpdate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try:
         async with session.begin():
             adress = await session.execute(select(ClientAdress).where(ClientAdress.id == client_adress_id))

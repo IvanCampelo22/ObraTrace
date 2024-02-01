@@ -90,7 +90,7 @@ async def get_one_other_checklist(other_checklist_id: int = None, dependencies=D
 @token_employee_required
 @async_session
 @router.put('/update-other-checklist/{other_checklist_id}', status_code=status.HTTP_202_ACCEPTED)
-async def update_construction(other_checklist_id: int, other_checklist: OtherCheckListUpdate, session: AsyncSession = Depends(conn.get_async_session)):
+async def update_construction(other_checklist_id: int, other_checklist: OtherCheckListUpdate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try:
 
         async with session.begin():
@@ -134,7 +134,7 @@ async def delete_other_checklist(other_checklist_id: int = None, dependencies=De
 @token_employee_required
 @async_session
 @router.post("/uploadfile/", status_code=status.HTTP_200_OK)
-async def create_upload_file(checklist_id: int, file: UploadFile = File(...), session: AsyncSession = Depends(conn.get_async_session)):
+async def create_upload_file(checklist_id: int, dependencies=Depends(JWTBearerEmployee()), file: UploadFile = File(...), session: AsyncSession = Depends(conn.get_async_session)):
     checklist = await session.execute(select(OtherCheckList).where(OtherCheckList.id == checklist_id))
     existing_checklist = checklist.scalars().first()
     try:

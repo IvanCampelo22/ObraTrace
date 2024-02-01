@@ -185,7 +185,7 @@ async def get_one_checklist_auto(checklist_auto_id: int = None, dependencies=Dep
         },
         404: {"description": "Insira dados válidos"}
 }}, status_code=status.HTTP_202_ACCEPTED)
-async def update_checklist_auto(checklist_auto_id: int, checklistauto: CheckListAutoUpdate, session: AsyncSession = Depends(conn.get_async_session)):
+async def update_checklist_auto(checklist_auto_id: int, checklistauto: CheckListAutoUpdate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try:
         async with session.begin():
             checklist = await session.execute(select(CheckListAuto).where(CheckListAuto.id == checklist_auto_id))
@@ -249,7 +249,7 @@ async def delete_checklist_auto(checklist_auto_id: int = None, dependencies=Depe
 @token_employee_required
 @async_session
 @router.post("/uploadfile/", status_code=status.HTTP_200_OK)
-async def create_upload_file(checklist_id: int, file: UploadFile = File(...), session: AsyncSession = Depends(conn.get_async_session)):
+async def create_upload_file(checklist_id: int, dependencies=Depends(JWTBearerEmployee()), file: UploadFile = File(...), session: AsyncSession = Depends(conn.get_async_session)):
     checklist = await session.execute(select(CheckListAuto).where(CheckListAuto.id == checklist_id))
     existing_checklist = checklist.scalars().first()
     try: 
