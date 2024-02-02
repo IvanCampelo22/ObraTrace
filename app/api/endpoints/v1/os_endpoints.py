@@ -43,7 +43,7 @@ router = APIRouter()
         },
         404: {"description": "Insira dados válidos"}
 }}, status_code=status.HTTP_201_CREATED)
-async def register_os_(os: OsCreate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
+async def register_os_(os: OsCreate, session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(Os).where(Os.client_id == os.client_id, Os.employee_id == os.employee_id, 
                                                                  Os.client_adress_id == os.client_adress_id, Os.os_type == os.os_type, Os.checklist == os.checklist,
                                                                  Os.sale == os.sale, Os.scheduling == os.scheduling, Os.signature_client == os.signature_client,
@@ -186,7 +186,7 @@ async def delete_os(os__id: int = None, dependencies=Depends(JWTBearerEmployee()
             obj_os = os_id.scalar_one()
             await session.delete(obj_os)
             await session.commit()
-            return {"message": "Ordem de Serviço deletada com sucesso"}
+            return os_id
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"{e}")
 

@@ -15,6 +15,9 @@ logger.add("logs/logs.log",  serialize=False)
 logger.add(sys.stdout, colorize=True, format="<green>{time}</green> <level>{message}</level>", backtrace=True, diagnose=True)
 logger.opt(colors=True)
 
+def get_data_from_db(session):
+    # Lógica para consultar o banco de dados e retornar os dados
+    pass
 
 if __name__ == "__main__":
     import uvicorn
