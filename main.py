@@ -16,16 +16,6 @@ logger.add(sys.stdout, colorize=True, format="<green>{time}</green> <level>{mess
 logger.opt(colors=True)
 
 
-def get_db():
-    db = AnsyncSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8080, log_level="info", reload=True)

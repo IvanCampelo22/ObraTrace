@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from datetime import date
+from datetime import datetime
 from typing import Optional
 from enum import Enum
 
@@ -14,12 +14,9 @@ class OsBase(BaseModel):
     os_type: OsTypeEnum
 
 class OsCreate(OsBase):
-    checklist_cam_id: Optional[int] = None
-    checklist_auto_id: Optional[int] = None 
-    checklist_sound_id: Optional[int] = None 
-    other_checklist_id: Optional[int] = None
-    scheduling: Optional[date] = None 
-    end_date: Optional[date] = None
+    checklist: Optional[str] = None
+    scheduling: Optional[datetime] = None 
+    end_date: Optional[datetime] = None
     info: str
     solution: str
     sale: str
@@ -34,12 +31,9 @@ class OsUpdate(BaseModel):
     client_id: Optional[int] = None  
     client_adress_id: Optional[int] = None 
     os_type: Optional[OsTypeEnum] = None
-    checklist_cam_id: Optional[int] = None
-    checklist_auto_id: Optional[int] = None 
-    checklist_sound_id: Optional[int] = None 
-    other_checklist_id: Optional[int] = None
-    scheduling: Optional[date] = None 
-    end_date: Optional[date] = None
+    checklist: Optional[str] = None
+    scheduling: Optional[datetime] = None 
+    end_date: Optional[datetime] = None
     info: Optional[str] = None 
     solution: Optional[str] = None
     sale: Optional[str] = None 

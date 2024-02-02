@@ -4,7 +4,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-from app.models import client_adress_models, checklist_auto_models, checklist_cam_models, checklist_sound_models, constructions_models, os_constructions_models, os_models, other_checklist_models
+from app.models import client_adress_models, constructions_models, os_constructions_models, os_models
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

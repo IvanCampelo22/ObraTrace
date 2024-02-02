@@ -25,10 +25,7 @@ router = APIRouter()
             "application/json": {
                 "example": [
                     {   
-                        "checklist_cam_id": 1,
-                        "checklist_auto_id": 1, 
-                        "checklist_sound_id": 1,
-                        "other_checklist_id": 1,
+                        "checklist": "Lista de equipamentos",
                         "scheduling": "2024-01-01", 
                         "end_date": "2024-01-02",
                         "info": "Instalação de caixas de som, de câmeras e de automação",
@@ -43,11 +40,9 @@ router = APIRouter()
 }}, status_code=status.HTTP_201_CREATED)
 async def register_os_construction(osconstruction: OsConstructionsCreate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(OsConstructions).where(OsConstructions.client_id == osconstruction.client_id, OsConstructions.employee_id == osconstruction.employee_id, 
-                                                                 OsConstructions.construction_id == osconstruction.construction_id, OsConstructions.checklist_auto_id == osconstruction.checklist_auto_id, 
-                                                                 OsConstructions.checklist_cam_id == osconstruction.checklist_cam_id, OsConstructions.checklist_sound_id == osconstruction.checklist_sound_id, 
-                                                                 OsConstructions.other_checklist_id == osconstruction.other_checklist_id,
+                                                                 OsConstructions.construction_id == osconstruction.construction_id, OsConstructions.checklist == osconstruction.checklist,
                                                                  OsConstructions.sale == osconstruction.sale, OsConstructions.scheduling == osconstruction.scheduling, OsConstructions.signature_client == osconstruction.signature_client,
-                                                                 OsConstructions.signature_emplooye == osconstruction.signature_emplooye, OsConstructions.solution == osconstruction.solution, OsConstructions.info == osconstruction.info,
+                                                                 OsConstructions.signature_emplooye == osconstruction.signature_emplooye, OsConstructions.info == osconstruction.info,
                                                                  OsConstructions.end_date == osconstruction.end_date))
     existing_os_construction = result.scalar()
     if existing_os_construction: 
@@ -55,9 +50,9 @@ async def register_os_construction(osconstruction: OsConstructionsCreate, depend
     
     try: 
         new_os_construction = OsConstructions(client_id=osconstruction.client_id, employee_id=osconstruction.employee_id, construction_id=osconstruction.construction_id, 
-                                              checklist_auto_id=osconstruction.checklist_auto_id, checklist_cam_id=osconstruction.checklist_cam_id, checklist_sound_id=osconstruction.checklist_sound_id,
-                                              other_checklist_id=osconstruction.other_checklist_id, sale=osconstruction.sale, scheduling=osconstruction.scheduling, signature_client=osconstruction.signature_client,
-                                              signature_emplooye=osconstruction.signature_emplooye, solution=osconstruction.solution, info=osconstruction.info, end_date=osconstruction.end_date)
+                                              checklist=osconstruction.checklist,
+                                              sale=osconstruction.sale, scheduling=osconstruction.scheduling, signature_client=osconstruction.signature_client,
+                                              signature_emplooye=osconstruction.signature_emplooye, info=osconstruction.info, end_date=osconstruction.end_date)
 
         session.add(new_os_construction)
         await session.commit()
@@ -108,10 +103,7 @@ async def get_one_os_constructions(dependencies=Depends(JWTBearerEmployee()), os
                         "employee_id": 1,
                         "client_id": 1,
                         "client_adress_id": 1, 
-                        "checklist_cam_id": 1, 
-                        "checklist_auto_id": 1, 
-                        "checklist_sound_id": 1, 
-                        "other_checklist_id": 1, 
+                        "checklist": "teste",
                         "os_type": "Instalação",
                         "scheduling": "2024-01-01",
                         "end_date": "2024-01-12",
@@ -132,42 +124,38 @@ async def get_one_os_constructions(dependencies=Depends(JWTBearerEmployee()), os
 }}, status_code=status.HTTP_202_ACCEPTED)
 async def update_os_construction(os_construction_id: int, os_construction_update: OsConstructionsUpdate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try:
-        async with session.begin():
-            os = await session.execute(select(OsConstructions).where(OsConstructions.id == os_construction_id))
-            existing_os = os.scalars().first()
+        os = await session.execute(select(OsConstructions).where(OsConstructions.id == os_construction_id))
+        existing_os = os.scalars().first()
 
-            if existing_os:
-                if os_construction_update.employee_id is not None:
-                    existing_os.employee_id = os_construction_update.employee_id
-                else: 
-                    existing_os.employee_id = existing_os.employee_id
-            
-                if os_construction_update.client_id is not None: 
-                    existing_os.client_id = os_construction_update.client_id
-                else: 
-                    existing_os.client_id = existing_os.client_id
-
-                if os_construction_update.construction_id is not None:
-                    existing_os.construction_id = os_construction_update.construction_id
-                else: 
-                    existing_os.construction_id = existing_os.construction_id
-
-
-                existing_os.checklist_cam_id = os_construction_update.checklist_cam_id
-                existing_os.checklist_auto_id = os_construction_update.checklist_auto_id
-                existing_os.checklist_sound_id = os_construction_update.checklist_sound_id
-                existing_os.other_checklist_id = os_construction_update.other_checklist_id
-                existing_os.scheduling = os_construction_update.scheduling 
-                existing_os.end_date = os_construction_update.end_date
-                existing_os.info = os_construction_update.info
-                existing_os.sale = os_construction_update.sale
-                existing_os.signature_emplooye = os_construction_update.signature_emplooye
-                existing_os.signature_client = os_construction_update.signature_client
+        if existing_os:
+            if os_construction_update.employee_id is not None:
+                existing_os.employee_id = os_construction_update.employee_id
+            else: 
+                existing_os.employee_id = existing_os.employee_id
         
-                await session.commit()
-                return existing_os
-            else:
-                return {"message": "Ordem de Serviço para obra não encontrada"}
+            if os_construction_update.client_id is not None: 
+                existing_os.client_id = os_construction_update.client_id
+            else: 
+                existing_os.client_id = existing_os.client_id
+
+            if os_construction_update.construction_id is not None:
+                existing_os.construction_id = os_construction_update.construction_id
+            else: 
+                existing_os.construction_id = existing_os.construction_id
+
+
+            existing_os.checklist = os_construction_update.checklist
+            existing_os.scheduling = os_construction_update.scheduling 
+            existing_os.end_date = os_construction_update.end_date
+            existing_os.info = os_construction_update.info
+            existing_os.sale = os_construction_update.sale
+            existing_os.signature_emplooye = os_construction_update.signature_emplooye
+            existing_os.signature_client = os_construction_update.signature_client
+    
+            await session.commit()
+            return existing_os
+        else:
+            return {"message": "Ordem de Serviço para obra não encontrada"}
             
     except Exception as e:
         await session.rollback()
@@ -186,6 +174,7 @@ async def delete_os_constructions(os_constructions_id: int = None, dependencies=
             await session.commit()
             return {"message": "Ordem de Serviço deletada com sucesso"}
     except Exception as e:
+        await session.rollback()
         raise HTTPException(status_code=500, detail=f"{e}")
 
 

@@ -10,10 +10,7 @@ class OsConstructionsBase(BaseModel):
     
 
 class OsConstructionsCreate(OsConstructionsBase):
-    checklist_cam_id: int
-    checklist_auto_id: int
-    checklist_sound_id: int
-    other_checklist_id: int
+    checklist: Optional[str] = None
     scheduling: Optional[date] = None 
     end_date: Optional[date] = None
     info: str
@@ -31,10 +28,7 @@ class OsConstructionsUpdate(BaseModel):
     employee_id: Optional[int] = None
     client_id: Optional[int] = None  
     construction_id: Optional[int] = None
-    checklist_cam_id: Optional[int] = None 
-    checklist_auto_id: Optional[int] = None 
-    checklist_sound_id: Optional[int] = None 
-    other_checklist_id: Optional[int] = None 
+    checklist: Optional[str] = None
     scheduling: Optional[date] = None 
     end_date: Optional[date] = None
     info: Optional[str] = None

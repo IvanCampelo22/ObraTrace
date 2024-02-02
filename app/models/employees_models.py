@@ -3,13 +3,11 @@ from sqlalchemy.orm import relationship
 from database.conn import Base
 import datetime
 from app.models.os_models import Os
-from app.models.other_checklist_models import OtherCheckList
-from app.models.checklist_auto_models import CheckListAuto
-from app.models.checklist_cam_models import CheckListCam
-from app.models.checklist_sound_models import CheckListSound
+
 
 class Employees(Base):
     __tablename__ = 'Employees'
+    
     id = Column(Integer, primary_key=True)
     username = Column(String(50),  nullable=False)
     email = Column(String(100), unique=True, nullable=False)
@@ -23,10 +21,7 @@ class Employees(Base):
     os_construction = relationship('OsConstructions', back_populates='employee')
     os = relationship('Os', back_populates='employee')
     construction = relationship('Constructions', back_populates='employee')
-    other_checklist = relationship('OtherCheckList', back_populates='employee')
-    checklist_cam = relationship('CheckListCam', back_populates='employee')
-    checklist_auto = relationship('CheckListAuto', back_populates='employee')  # Renomeado para evitar conflito com 'checklist_auto'
-    checklist_sound = relationship('CheckListSound', back_populates='employee')
+
 
 class TokenTableEmployees(Base):
     __tablename__ = "TokenTableEmployees"

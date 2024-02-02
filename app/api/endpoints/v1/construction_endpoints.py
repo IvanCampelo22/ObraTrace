@@ -57,16 +57,14 @@ async def register_construction(construction: ConstructionCreate, dependencies=D
 @router.get("/list-construction", status_code=status.HTTP_200_OK, response_model=None)
 async def list_constructions(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)) -> any:
     try:
-
-        async with session.begin():
-            query = select(Constructions).options(joinedload(Constructions.client_adress)).\
-            options(joinedload(Constructions.employee)).\
-            options(joinedload(Constructions.os_construction)).\
-            options(joinedload(Constructions.client))
-            result = await session.execute(query)
-            result = result.unique()
-            constructions: List[ConstructionSchema] = result.scalars().all()
-            return constructions
+        query = select(Constructions).options(joinedload(Constructions.client_adress)).\
+        options(joinedload(Constructions.employee)).\
+        options(joinedload(Constructions.os_construction)).\
+        options(joinedload(Constructions.client))
+        result = await session.execute(query)
+        result = result.unique()
+        constructions: List[ConstructionSchema] = result.scalars().all()
+        return constructions
         
     except Exception as e:
         await session.rollback()
@@ -78,17 +76,15 @@ async def list_constructions(dependencies=Depends(JWTBearerEmployee()), session:
 @router.get("/get-one-construction", status_code=status.HTTP_200_OK)
 async def get_one_checklist(construction_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
+        construction = await session.execute(select(Constructions).where(Constructions.id == construction_id).options(joinedload(Constructions.client_adress)).\
+                                                options(joinedload(Constructions.employee)).\
+                                                options(joinedload(Constructions.os_construction)).\
+                                                options(joinedload(Constructions.client)))
+        construction = construction.unique()
 
-        async with session.begin():
-            construction = await session.execute(select(Constructions).where(Constructions.id == construction_id).options(joinedload(Constructions.client_adress)).\
-                                                   options(joinedload(Constructions.employee)).\
-                                                    options(joinedload(Constructions.os_construction)).\
-                                                    options(joinedload(Constructions.client)))
-            construction = construction.unique()
-
-            if construction:
-                obj_construction = construction.scalar_one()
-                return obj_construction
+        if construction:
+            obj_construction = construction.scalar_one()
+            return obj_construction
             
     except Exception as e:
         await session.rollback()
@@ -100,17 +96,15 @@ async def get_one_checklist(construction_id: int = None, dependencies=Depends(JW
 @router.put('/update-construction/{construction_id}', status_code=status.HTTP_202_ACCEPTED)
 async def update_construction(construction_id: int, construction: ConstructionUpdate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try:
+        constructions = await session.execute(select(Constructions).where(Constructions.id == construction_id))
+        existing_construction = constructions.scalars().first()
 
-        async with session.begin():
-            constructions = await session.execute(select(Constructions).where(Constructions.id == construction_id))
-            existing_construction = constructions.scalars().first()
-
-            if existing_construction:
-                existing_construction.is_done = construction.is_done
-                await session.commit()
-                return existing_construction
-            else:
-                return {"message": "Obra não encontrada"}
+        if existing_construction:
+            existing_construction.is_done = construction.is_done
+            await session.commit()
+            return existing_construction
+        else:
+            return {"message": "Obra não encontrada"}
             
     except Exception as e:
         await session.rollback()
@@ -123,15 +117,13 @@ async def update_construction(construction_id: int, construction: ConstructionUp
 async def delete_construction(construction_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     construction = await session.execute(select(Constructions).where(Constructions.id == construction_id))
     try: 
+        construction = await session.execute(select(Constructions).where(Constructions.id == construction_id))
 
-        async with session.begin():
-            construction = await session.execute(select(Constructions).where(Constructions.id == construction_id))
-
-            if construction:
-                obj_construction = construction.scalar_one()
-                await session.delete(obj_construction)
-                await session.commit()
-                return {"message": "Obra deletada com sucesso"}
+        if construction:
+            obj_construction = construction.scalar_one()
+            await session.delete(obj_construction)
+            await session.commit()
+            return {"message": "Obra deletada com sucesso"}
             
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"{e}")

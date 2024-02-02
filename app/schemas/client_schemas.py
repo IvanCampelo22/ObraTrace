@@ -13,7 +13,6 @@ class ClientCreate(ClientBase):
 class Client(ClientBase):
     id: int 
 
-
 class ClientUpdate(BaseModel):
     username: Optional[str] = None
     email: Optional[str] = None 

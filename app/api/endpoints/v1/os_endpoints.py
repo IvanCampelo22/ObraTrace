@@ -29,10 +29,7 @@ router = APIRouter()
                         "client_id": 1,
                         "client_adress_id": 1,
                         "os_type": "Manutenção",
-                        "checklist_cam_id": 1,
-                        "checklist_auto_id": 1,
-                        "checklist_sound_id": 1,
-                        "other_checklist_id": 1,
+                        "checklist": "lista de equipamentos",
                         "scheduling": '2024-01-01',
                         "end_date": "2024-01-02",
                         "info": "Há três câmeras queimadas, de 16",
@@ -48,9 +45,7 @@ router = APIRouter()
 }}, status_code=status.HTTP_201_CREATED)
 async def register_os_(os: OsCreate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(Os).where(Os.client_id == os.client_id, Os.employee_id == os.employee_id, 
-                                                                 Os.client_adress_id == os.client_adress_id, Os.os_type == os.os_type, Os.checklist_auto_id == os.checklist_auto_id, 
-                                                                 Os.checklist_cam_id == os.checklist_cam_id, Os.checklist_sound_id == os.checklist_sound_id, 
-                                                                 Os.other_checklist_id == os.other_checklist_id,
+                                                                 Os.client_adress_id == os.client_adress_id, Os.os_type == os.os_type, Os.checklist == os.checklist,
                                                                  Os.sale == os.sale, Os.scheduling == os.scheduling, Os.signature_client == os.signature_client,
                                                                  Os.signature_emplooye == os.signature_emplooye, Os.solution == os.solution, Os.info == os.info,
                                                                  Os.end_date == os.end_date))
@@ -60,8 +55,7 @@ async def register_os_(os: OsCreate, dependencies=Depends(JWTBearerEmployee()), 
     
     try: 
         new_os = Os(client_id=os.client_id, employee_id=os.employee_id, client_adress_id=os.client_adress_id, os_type=os.os_type,
-                                              checklist_auto_id=os.checklist_auto_id, checklist_cam_id=os.checklist_cam_id, checklist_sound_id=os.checklist_sound_id,
-                                              other_checklist_id=os.other_checklist_id, sale=os.sale, scheduling=os.scheduling, signature_client=os.signature_client,
+                                              checklist=os.checklist, sale=os.sale, scheduling=os.scheduling, signature_client=os.signature_client,
                                               signature_emplooye=os.signature_emplooye, solution=os.solution, info=os.info, end_date=os.end_date)
 
         session.add(new_os)
@@ -94,13 +88,12 @@ async def list_os(dependencies=Depends(JWTBearerEmployee()), session: AsyncSessi
 @router.get("/get-one-os", status_code=status.HTTP_200_OK)
 async def get_one_os(dependencies=Depends(JWTBearerEmployee()), os_id: int = None, session: AsyncSession = Depends(conn.get_async_session)):
     try: 
-        async with session.begin():
-            os = await session.execute(select(Os).where(Os.id == os_id).options(joinedload(Os.client)).options(joinedload(Os.client_adress)))                   
-            os = os.unique()
+        os = await session.execute(select(Os).where(Os.id == os_id).options(joinedload(Os.client)).options(joinedload(Os.client_adress)))                   
+        os = os.unique()
 
-            if os_id:
-                obj_construction = os.scalar_one()
-                return obj_construction
+        if os_id:
+            obj_construction = os.scalar_one()
+            return obj_construction
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"{e}")
     
@@ -117,10 +110,7 @@ async def get_one_os(dependencies=Depends(JWTBearerEmployee()), os_id: int = Non
                         "employee_id": 1,
                         "client_id": 1,
                         "client_adress_id": 1, 
-                        "checklist_cam_id": 1, 
-                        "checklist_auto_id": 1, 
-                        "checklist_sound_id": 1, 
-                        "other_checklist_id": 1, 
+                        "checklist": "lista de equipamentos",
                         "os_type": "Instalação",
                         "scheduling": "2024-01-01",
                         "end_date": "2024-01-12",
@@ -141,49 +131,45 @@ async def get_one_os(dependencies=Depends(JWTBearerEmployee()), os_id: int = Non
 }}, status_code=status.HTTP_202_ACCEPTED)
 async def update_os(os_id: int, os_update: OsUpdate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try:
-        async with session.begin():
-            os = await session.execute(select(Os).where(Os.id == os_id))
-            existing_os = os.scalars().first()
+        os = await session.execute(select(Os).where(Os.id == os_id))
+        existing_os = os.scalars().first()
 
-            if existing_os:
-                if os_update.employee_id is not None:
-                    existing_os.employee_id = os_update.employee_id
-                else: 
-                    existing_os.employee_id = existing_os.employee_id
-            
-                if os_update.client_id is not None: 
-                    existing_os.client_id = os_update.client_id
-                else: 
-                    existing_os.client_id = existing_os.client_id
-
-                if os_update.client_adress_id is not None:
-                    existing_os.client_adress_id = os_update.client_adress_id
-                else: 
-                    existing_os.client_adress_id = existing_os.client_adress_id
-
-                if os_update.os_type is not None: 
-                    existing_os.os_type = os_update.os_type
-                else:
-                    existing_os.os_type = existing_os.os_type
-
-
-                existing_os.checklist_cam_id = os_update.checklist_cam_id
-                existing_os.checklist_auto_id = os_update.checklist_auto_id
-                existing_os.checklist_sound_id = os_update.checklist_sound_id
-                existing_os.other_checklist_id = os_update.other_checklist_id
-                existing_os.scheduling = os_update.scheduling 
-                existing_os.end_date = os_update.end_date
-                existing_os.solution = os_update.solution
-                existing_os.info = os_update.info
-                existing_os.sale = os_update.sale
-                existing_os.signature_emplooye = os_update.signature_emplooye
-                existing_os.signature_client = os_update.signature_client
-                existing_os.is_active = os_update.is_active
+        if existing_os:
+            if os_update.employee_id is not None:
+                existing_os.employee_id = os_update.employee_id
+            else: 
+                existing_os.employee_id = existing_os.employee_id
         
-                await session.commit()
-                return existing_os
+            if os_update.client_id is not None: 
+                existing_os.client_id = os_update.client_id
+            else: 
+                existing_os.client_id = existing_os.client_id
+
+            if os_update.client_adress_id is not None:
+                existing_os.client_adress_id = os_update.client_adress_id
+            else: 
+                existing_os.client_adress_id = existing_os.client_adress_id
+
+            if os_update.os_type is not None: 
+                existing_os.os_type = os_update.os_type
             else:
-                return {"message": "Ordem de Serviço não encontrada"}
+                existing_os.os_type = existing_os.os_type
+
+
+            existing_os.checklist = os_update.checklist
+            existing_os.scheduling = os_update.scheduling 
+            existing_os.end_date = os_update.end_date
+            existing_os.solution = os_update.solution
+            existing_os.info = os_update.info
+            existing_os.sale = os_update.sale
+            existing_os.signature_emplooye = os_update.signature_emplooye
+            existing_os.signature_client = os_update.signature_client
+            existing_os.is_active = os_update.is_active
+    
+            await session.commit()
+            return existing_os
+        else:
+            return {"message": "Ordem de Serviço não encontrada"}
             
     except Exception as e:
         await session.rollback()

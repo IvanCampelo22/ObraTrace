@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship
 
 class Client(Base):
     __tablename__ = 'Client'
+    
     id = Column(Integer, primary_key=True)
     username = Column(String(50),  nullable=False)
     email = Column(String(100), unique=True, nullable=False)
