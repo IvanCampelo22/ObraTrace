@@ -3,6 +3,8 @@ import unittest
 from unittest.mock import patch, Mock
 import json
 
+API_BASE_URL = 'http://0.0.0.0:8080/'
+
 data = {
         "employee_id": 1,
         "client_id": 1,
@@ -18,27 +20,21 @@ data = {
         "signature_client": "string"
     }
 
-def get_os_data():
-    response = requests.get('http://0.0.0.0:8080/os/list-os')
-    return response.json()
+def make_get_request(url):
+    response = requests.get(url)
+    return response.status_code, response.json()
 
-def get_one_os_data(os_id):
-    response = requests.get(f'http://0.0.0.0:8080/os/get-one-os/{os_id}')
-    return response.json()
+def make_post_request(url ,json_data):
+    response = requests.post(url, json=json_data)
+    return response.status_code, response.json()
 
-def post_os_data():
-    json_data = json.dumps(data)
-    response = requests.post('http://0.0.0.0:8080/os/register-os', json=json_data)
-    return response.json()
+def make_put_request(url, json_data):
+    response = requests.put(url, json_data)
+    return response.status_code, response.json()
 
-def put_os_data(os_id):
-    json_data = json.dumps(data)
-    response = requests.put(f'http://0.0.0.0:8080/os/update-os/{os_id}', json=json_data)
-    return response.json()
-
-def delete_os_data(os_id):
-    response = requests.delete(f'http://0.0.0.0:8080/os/delete-os/{os_id}')
-    return response.json()
+def make_delete_request(url):
+    response = requests.delete(url)
+    return response.status_code, response.json()
 
 class TesteOsData(unittest.TestCase):
 
@@ -60,11 +56,11 @@ class TesteOsData(unittest.TestCase):
             "signature_client": "string"
             }
         
-        mock_response.json.return_value = response_dict
+        mock_response.status_code, mock_response.json.return_value = 200, response_dict
         mock_get.return_value = mock_response
-        user_data = get_os_data()
-        mock_get.assert_called_with('http://0.0.0.0:8080/os/list-os')
-        self.assertEqual(user_data, response_dict)
+        os_status, os_data = make_get_request(API_BASE_URL + 'os/list-os')
+        self.assertEqual(os_data, response_dict)
+        self.assertEqual(os_status, 200)
 
     @patch('requests.get')
     def test_get_one_os_data(self, mock_get):
@@ -85,24 +81,25 @@ class TesteOsData(unittest.TestCase):
             }
         
         mock_response.json.return_value = response_dict
+        mock_response.status_code = 200
         mock_get.return_value = mock_response
-        user_data = get_one_os_data(1)
-        mock_get.assert_called_with('http://0.0.0.0:8080/os/get-one-os/1')
-        self.assertEqual(user_data, response_dict)
+        os_status, os_data = make_get_request(API_BASE_URL + 'os/get-one-os/1')
+        self.assertEqual(os_data, response_dict)
+        self.assertEqual(os_status, 200)
 
     @patch('requests.post')
     def test_post_os_data(self, mock_post):
         mock_response = Mock()
         message_response = {"message":"Ordem de serviço para manutenção criada com sucesso"}
         json_data = json.dumps(data)
-        mock_response.json.return_value = message_response
+        mock_response.status_code, mock_response.json.return_value = 200, message_response
         mock_post.return_value = mock_response
-        user_data = post_os_data()
-        mock_post.assert_called_with('http://0.0.0.0:8080/os/register-os', json=json_data)
+        user_status, user_data = make_post_request(API_BASE_URL + 'os/register-os', json_data)
         self.assertEqual(user_data, message_response)
+        self.assertEqual(user_status, 200)
     
     @patch('requests.put')
-    def test_put_os_data(self, mock_post):
+    def test_put_os_data(self, mock_put):
         mock_response = Mock()
         response = {
             "employee_id": 1,
@@ -119,21 +116,21 @@ class TesteOsData(unittest.TestCase):
             "signature_client": "string"
             }
         json_data = json.dumps(data)
-        mock_response.json.return_value = response
-        mock_post.return_value = mock_response
-        user_data = put_os_data(1)
-        mock_post.assert_called_with('http://0.0.0.0:8080/os/update-os/1', json=json_data)
-        self.assertEqual(user_data, response)
+        mock_response.status_code, mock_response.json.return_value = 200, response
+        mock_put.return_value = mock_response
+        os_status, os_data = make_put_request(API_BASE_URL + 'os/update-os/1', json_data)
+        self.assertEqual(os_data, response)
+        self.assertEqual(os_status, 200)
 
     @patch('requests.delete')
-    def test_delete_os_data(self, mock_post):
+    def test_delete_os_data(self, mock_delete):
         mock_response = Mock()
         response = {"message": "Ordem de Serviço deletada com sucesso"}
-        mock_response.json.return_value = response
-        mock_post.return_value = mock_response
-        user_data = delete_os_data(1)
-        mock_post.assert_called_with('http://0.0.0.0:8080/os/delete-os/1')
-        self.assertEqual(user_data, response)
+        mock_response.status_code, mock_response.json.return_value = 200, response
+        mock_delete.return_value = mock_response
+        os_status, os_data = make_delete_request(API_BASE_URL + 'os/delete-os/1')
+        self.assertEqual(os_data, response)
+        self.assertEqual(os_status, os_status)
 
 if __name__ == '__main__':
     unittest.main()
