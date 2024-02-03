@@ -4,20 +4,31 @@ from loguru import logger
 import sys
 from fastapi import FastAPI
 from app.api.routes import api_router
-from database.conn import AnsyncSessionLocal
+from fastapi.middleware.cors import CORSMiddleware
 
 
 app = FastAPI(title='Ordem De Serviço')
 app.include_router(api_router)
 
+origins = [
+    "http://localhost.tiangolo.com",
+    "https://localhost.tiangolo.com",
+    "http://localhost",
+    "http://localhost:8080",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 logger.add("logs/logs.log",  serialize=False)
 logger.add(sys.stdout, colorize=True, format="<green>{time}</green> <level>{message}</level>", backtrace=True, diagnose=True)
 logger.opt(colors=True)
-
-def get_data_from_db(session):
-    # Lógica para consultar o banco de dados e retornar os dados
-    pass
 
 if __name__ == "__main__":
     import uvicorn
