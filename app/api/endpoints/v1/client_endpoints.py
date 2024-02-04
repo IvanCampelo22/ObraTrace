@@ -256,6 +256,6 @@ async def deactivate_client(client_id: int = None, dependencies=Depends(JWTBeare
         if client:
             obj_client = client.scalar_one()
             obj_client.is_active = False
-            return {"message": "funcionário desativado"}
+            return {"message": "cliente desativado"}
     except Exception as e:
         HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
