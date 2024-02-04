@@ -100,7 +100,7 @@ async def login(request: requestdetails, session: AsyncSession = Depends(conn.ge
 
 
 @token_employee_required
-@router.get('/getusers', response_model=List[EmployeeCreate])
+@router.get('/getusers', status_code=status.HTTP_200_OK)
 async def getusers(dependencies=Depends(JWTBearerEmployee()), db: AsyncSession = Depends(conn.get_async_session)):
     async with db as session:
         query = select(Employees)
@@ -144,7 +144,7 @@ async def get_one_employee(employee_id: int = None, dependencies=Depends(JWTBear
         },
         404: {"description": "Insira dados válidos"}
 }}, status_code=status.HTTP_202_ACCEPTED)
-async def update_client(employee_id: int, employee_update: EmployeeUpdate, session: AsyncSession = Depends(conn.get_async_session)):
+async def update_employee(employee_id: int, employee_update: EmployeeUpdate, session: AsyncSession = Depends(conn.get_async_session)):
     try:
         async with session.begin():
             employee = await session.execute(select(Employees).where(Employees.id == employee_id))
@@ -194,7 +194,7 @@ async def change_password(request: changepassword, session: AsyncSession = Depen
 
 
 @token_employee_required
-@router.post('/logout')
+@router.post('/logout', status_code=status.HTTP_200_OK)
 async def logout(dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     token = dependencies
     payload = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
@@ -213,7 +213,7 @@ async def logout(dependencies=Depends(JWTBearerEmployee()), session: AsyncSessio
         existing_tokens = result.scalars().all()
 
         for token in existing_tokens:
-            await session.delete()
+            await session.delete(token)
         
     result = await session.execute(
     select(TokenTableEmployees).where(
