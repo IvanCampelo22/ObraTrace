@@ -2,6 +2,8 @@ from fastapi import Depends, HTTPException,status, APIRouter
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm.exc import NoResultFound
+from psycopg2.errors import ForeignKeyViolation
 from typing import List
 
 from app.schemas.client_adress_schemas import ClientAdressCreate, ClientAdressUpdate
@@ -39,6 +41,14 @@ router = APIRouter()
 }}, status_code=status.HTTP_201_CREATED)
 async def register_client_adress(adress: ClientAdressCreate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
+        if len(adress.state) > 2:
+            await session.rollback()
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Insira dados válidos no campo state'})
+
+        if ForeignKeyViolation:
+            await session.rollback()
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se o cliente e o funcionário estão cadastrados'})
+
         new_adress = ClientAdress(client_id=adress.client_id, employee_id=adress.employee_id, adress=adress.adress, number=adress.number, cep=adress.cep, city=adress.city, state=adress.state, name_building=adress.name_building, reference_point=adress.reference_point, complement=adress.complement)
 
         session.add(new_adress)
@@ -69,16 +79,15 @@ async def list_client_adresses(dependencies=Depends(JWTBearerEmployee()), sessio
 @async_session
 @router.get("/get-one-client-adress", status_code=status.HTTP_200_OK)
 async def get_one_client_adress(client_adress_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
-    adress_id = await session.execute(select(ClientAdress).where(ClientAdress.id == client_adress_id))
-    try: 
-        if adress_id:
-            obj_adress = adress_id.scalar_one()
-            return obj_adress
-        
+    try:
+        adress_id = await session.execute(select(ClientAdress).where(ClientAdress.id == client_adress_id))
+        obj_adress = adress_id.scalar_one()
+        return obj_adress
+    except NoResultFound:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'error': 'Endereço não encontrado'})
     except Exception as e:
-        session.rollback()
-        raise HTTPException(status_code=500, detail=f"{e}")
-    
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'{e}')
+
     
 @token_employee_required
 @async_session
@@ -86,12 +95,13 @@ async def get_one_client_adress(client_adress_id: int = None, dependencies=Depen
 async def get_one_client_adress(client_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     adress_id = await session.execute(select(ClientAdress).where(ClientAdress.client_id == client_id))
     try: 
-        if adress_id:
-            obj_adress = adress_id.scalar_one()
-            return obj_adress
-        
+        obj_adress = adress_id.scalar_one()
+        return obj_adress
+    
+    except NoResultFound:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'error': 'Cliente não encontrado'})
     except Exception as e:
-        session.rollback()
+        await session.rollback()
         raise HTTPException(status_code=500, detail=f"{e}")
     
 
@@ -121,10 +131,18 @@ async def get_one_client_adress(client_id: int = None, dependencies=Depends(JWTB
         },
         404: {"description": "Insira dados válidos"}
 }}, status_code=status.HTTP_202_ACCEPTED)
-async def update_client_adress(client_adress_id: int, clientadress: ClientAdressUpdate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
+async def update_client_adress(client_adress_id: int, clientadress: ClientAdressUpdate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)) -> None:
     try:
         adress = await session.execute(select(ClientAdress).where(ClientAdress.id == client_adress_id))
         existing_adress = adress.scalars().first()
+
+        if len(clientadress.state) > 2:
+            await session.rollback()
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Insira dados válidos no campo state'})
+
+        if ForeignKeyViolation:
+            await session.rollback()
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se o cliente e o funcionário estão cadastrados'})
 
         if existing_adress:
             if clientadress.employee_id is not None:
@@ -170,7 +188,9 @@ async def update_client_adress(client_adress_id: int, clientadress: ClientAdress
             return existing_adress
         else:
             return {"message": "Endereço não encontrado"}
-            
+    
+    except NoResultFound:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'error': 'Endereço não encontrado'})
     except Exception as e:
         await session.rollback()
         raise HTTPException(status_code=500, detail=f"{e}")
@@ -187,7 +207,11 @@ async def delete_client_adress(client_adress_id: int = None, dependencies=Depend
             await session.delete(obj_adress)
             await session.commit()
             return {"message": "Endereço deletado com sucesso"}
+    except NoResultFound:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'error': 'Endereço não encontrado'})
     except Exception as e:
+        await session.rollback()
         raise HTTPException(status_code=500, detail=f"{e}")
     
 
