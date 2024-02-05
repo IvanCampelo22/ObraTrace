@@ -3,8 +3,10 @@ from fastapi import Depends, HTTPException,status, APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
+from sqlalchemy.orm.exc import NoResultFound
 
 from jose import jwt
+from psycopg2.errors import ForeignKeyViolation
 from datetime import datetime
 from typing import List
 
@@ -121,7 +123,10 @@ async def get_one_client(client_id: int = None, dependencies=Depends(JWTBearerCl
         if client:
             obj_adress = client.scalar_one()
             return obj_adress
-        
+    
+    except NoResultFound:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'message': 'Cliente não encontrado'})
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=f"{e}")
@@ -148,26 +153,28 @@ async def get_one_client(client_id: int = None, dependencies=Depends(JWTBearerCl
 }}, status_code=status.HTTP_202_ACCEPTED)
 async def update_client(client_id: int, client_update: ClientUpdate, session: AsyncSession = Depends(conn.get_async_session)):
     try:
-        async with session.begin():
-            client = await session.execute(select(Client).where(Client.id == client_id))
-            existing_client = client.scalars().first()
+        client = await session.execute(select(Client).where(Client.id == client_id))
+        existing_client = client.scalars().first()
 
-            if existing_client:
-                if client_update.username is not None:
-                    existing_client.username = client_update.username
-                else: 
-                    existing_client.username = existing_client.username
+        if existing_client:
+            if client_update.username is not None:
+                existing_client.username = client_update.username
+            else: 
+                existing_client.username = existing_client.username
 
-                if client_update.email is not None:
-                    existing_client.email = client_update.email
-                else: 
-                    existing_client.email = existing_client.email                
+            if client_update.email is not None:
+                existing_client.email = client_update.email
+            else: 
+                existing_client.email = existing_client.email                
+
+            await session.commit()
+            return existing_client.id
+        else:
+            return {"message": "Cliente não encontrado"}
     
-                await session.commit()
-                return existing_client.id
-            else:
-                return {"message": "Cliente não encontrado"}
-            
+    except NoResultFound:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'message': 'Cliente não encontrado'})
     except Exception as e:
         await session.rollback()
         raise HTTPException(status_code=500, detail=f"{e}")
@@ -242,8 +249,11 @@ async def list_users(is_activate: bool = None, is_deactivate: bool = None, depen
             return client_is_deactivate.scalar()
         else: 
             return result.scalar()
-
+    except NoResultFound:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'message': 'Cliente não encontrado'})
     except Exception as e:
+        await session.rollback()
         HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
 
 
@@ -257,5 +267,8 @@ async def deactivate_client(client_id: int = None, dependencies=Depends(JWTBeare
             obj_client = client.scalar_one()
             obj_client.is_active = False
             return {"message": "cliente desativado"}
+    except NoResultFound:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'message': 'Cliente não encontrado'})    
     except Exception as e:
         HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
