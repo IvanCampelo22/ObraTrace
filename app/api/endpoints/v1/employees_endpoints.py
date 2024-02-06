@@ -1,11 +1,14 @@
 from fastapi import Depends, HTTPException,status, APIRouter
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.future import select
 
 from jose import jwt
 from datetime import datetime
 from typing import List
+from psycopg2.errors import ForeignKeyViolation
+
 
 from app.schemas.employee_schemas import EmployeeCreate, EmployeeUpdate, TokenEmployeeSchema, requestdetails, changepassword
 from app.models.employees_models import Employees, TokenTableEmployees
@@ -27,7 +30,7 @@ router = APIRouter()
 
 
 @router.post("/register", responses={
-    200: {
+    201: {
         "description": "Funcionário cadastrado com sucesso",
         "content": {
             "application/json": {
@@ -41,8 +44,8 @@ router = APIRouter()
                 ]
             }
         },
-        404: {"description": "Insira dados válidos"}
-}},)
+        400: {"description": "Insira dados válidos"}
+}})
 async def register_user(employee: EmployeeCreate, session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(Employees).where(Employees.email == employee.email))
     existing_user = result.scalar()
@@ -114,21 +117,29 @@ async def getusers(dependencies=Depends(JWTBearerEmployee()), db: AsyncSession =
 @async_session
 @router.get("/get-one-employee", status_code=status.HTTP_200_OK)
 async def get_one_employee(employee_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
-    employee = await session.execute(select(Employees).where(Employees.id == employee_id))
     try: 
-        if employee:
-            obj_adress = employee.scalar_one()
-            return obj_adress
+        employee = await session.execute(select(Employees).where(Employees.id == employee_id))
         
+        if ForeignKeyViolation:
+            await session.rollback()
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se os dados são válidos'})
+        
+        obj_adress = employee.scalar_one()
+        return obj_adress
+        
+    except NoResultFound:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={'error': 'Funcionário não encontrado'}) 
+    
     except Exception as e:
         session.rollback()
-        raise HTTPException(status_code=500, detail=f"{e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
     
 
 @token_employee_required
 @async_session
 @router.put('/update-employee/{employee_id}', responses={
-    200: {
+    201: {
         "description": "Funcionários atualizado com sucesso",
         "content": {
             "application/json": {
@@ -143,37 +154,41 @@ async def get_one_employee(employee_id: int = None, dependencies=Depends(JWTBear
             }
         },
         404: {"description": "Insira dados válidos"}
-}}, status_code=status.HTTP_202_ACCEPTED)
+}}, status_code=status.HTTP_201_CREATED)
 async def update_employee(employee_id: int, employee_update: EmployeeUpdate, session: AsyncSession = Depends(conn.get_async_session)):
     try:
-        async with session.begin():
-            employee = await session.execute(select(Employees).where(Employees.id == employee_id))
-            existing_employee = employee.scalars().first()
+        employee = await session.execute(select(Employees).where(Employees.id == employee_id))
+        existing_employee = employee.scalars().first()
 
-            if existing_employee:
-                if employee_update.username is not None:
-                    existing_employee.username = employee_update.username
-                else: 
-                    existing_employee.username = existing_employee.username
+        if ForeignKeyViolation:
+            await session.rollback()
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se os dados são válidos'})
 
-                if employee_update.email is not None:
-                    existing_employee.email = employee_update.email
-                else: 
-                    existing_employee.email = existing_employee.email            
+        if employee_update.username is not None:
+            existing_employee.username = employee_update.username
+        else: 
+            existing_employee.username = existing_employee.username
 
-                if employee_update.work_type is not None:
-                    existing_employee.work_type = employee_update.work_type
-                else:
-                    existing_employee.work_type = existing_employee.work_type    
+        if employee_update.email is not None:
+            existing_employee.email = employee_update.email
+        else: 
+            existing_employee.email = existing_employee.email            
+
+        if employee_update.work_type is not None:
+            existing_employee.work_type = employee_update.work_type
+        else:
+            existing_employee.work_type = existing_employee.work_type    
+
+        await session.commit()
+        return existing_employee
     
-                await session.commit()
-                return existing_employee
-            else:
-                return {"message": "Funcionário não encontrado"}
-            
+    except NoResultFound:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={'error': 'Funcionário não encontrado'}) 
+         
     except Exception as e:
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f"{e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
     
 
 @router.post('/change-password')
@@ -235,18 +250,24 @@ async def logout(dependencies=Depends(JWTBearerEmployee()), session: AsyncSessio
 @async_session
 @router.get('/get-employees', status_code=status.HTTP_200_OK)
 async def list_users(is_activate: bool = None, is_deactivate: bool = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
-    employee_is_activate = await session.execute(select(Employees).where(Employees.is_active == True))
-    employee_is_deactivate = await session.execute(select(Employees).where(Employees.is_active == False))
-    result = await session.execute(select(Employees))
     try:
+        employee_is_activate = await session.execute(select(Employees).where(Employees.is_active == True))
+        employee_is_deactivate = await session.execute(select(Employees).where(Employees.is_active == False))
+        result = await session.execute(select(Employees))
+
         if is_activate == True:
             return employee_is_activate.scalar()
         elif is_deactivate == True:
             return employee_is_deactivate.scalar()
         else: 
             return result.scalar()
-
+        
+    except NoResultFound:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={'error': 'Funcionário não encontrado'})
+    
     except Exception as e:
+        await session.rollback()
         HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
 
 
@@ -256,9 +277,12 @@ async def list_users(is_activate: bool = None, is_deactivate: bool = None, depen
 async def deactivate_employee(employee_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     employee = await session.execute(select(Employees).where(Employees.id == employee_id))
     try: 
-        if employee:
-            obj_employee = employee.scalar_one()
-            obj_employee.is_active = False
-            return {"message": "funcionário desativado"}
+        obj_employee = employee.scalar_one()
+        obj_employee.is_active = False
+        return {"message": "funcionário desativado"}
+    
+    except NoResultFound:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={'error': 'Funcionário não encontrado'}) 
     except Exception as e:
         HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")

@@ -2,6 +2,9 @@ from fastapi import APIRouter, File, UploadFile, Depends, status, HTTPException
 
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.exc import NoResultFound
+
+from psycopg2.errors import ForeignKeyViolation
 from typing import List
 
 
@@ -19,7 +22,7 @@ router = APIRouter()
 @token_employee_required
 @async_session
 @router.post("/register-os-construction", responses={
-    200: {
+    201: {
         "description": "Ordem de Serviço para obra criada com sucesso",
         "content": {
             "application/json": {
@@ -36,23 +39,28 @@ router = APIRouter()
                 ]
             }
         },
-        404: {"description": "Insira dados válidos"}
+        400: {"description": "Insira dados válidos"}
 }}, status_code=status.HTTP_201_CREATED)
 async def register_os_construction(osconstruction: OsConstructionsCreate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
-    result = await session.execute(select(OsConstructions).where(OsConstructions.client_id == osconstruction.client_id, OsConstructions.employee_id == osconstruction.employee_id, 
-                                                                 OsConstructions.construction_id == osconstruction.construction_id, OsConstructions.checklist == osconstruction.checklist,
-                                                                 OsConstructions.sale == osconstruction.sale, OsConstructions.scheduling == osconstruction.scheduling, OsConstructions.signature_client == osconstruction.signature_client,
-                                                                 OsConstructions.signature_emplooye == osconstruction.signature_emplooye, OsConstructions.info == osconstruction.info,
-                                                                 OsConstructions.end_date == osconstruction.end_date))
-    existing_os_construction = result.scalar()
-    if existing_os_construction: 
-        raise HTTPException(status_code=400, detail="Já temos essa ordem de serviço registrada")
-    
-    try: 
+    try:
+        result = await session.execute(select(OsConstructions).where(OsConstructions.client_id == osconstruction.client_id, OsConstructions.employee_id == osconstruction.employee_id, 
+                                                                    OsConstructions.construction_id == osconstruction.construction_id, OsConstructions.checklist == osconstruction.checklist,
+                                                                    OsConstructions.sale == osconstruction.sale, OsConstructions.scheduling == osconstruction.scheduling, OsConstructions.signature_client == osconstruction.signature_client,
+                                                                    OsConstructions.signature_emplooye == osconstruction.signature_emplooye, OsConstructions.info == osconstruction.info,
+                                                                    OsConstructions.end_date == osconstruction.end_date))
+        existing_os_construction = result.scalar()
+        
+        if existing_os_construction: 
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Já temos essa ordem de serviço registrada")
+        
+        if ForeignKeyViolation:
+            await session.rollback()
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se os dados são válidos'})
+        
         new_os_construction = OsConstructions(client_id=osconstruction.client_id, employee_id=osconstruction.employee_id, construction_id=osconstruction.construction_id, 
-                                              checklist=osconstruction.checklist,
-                                              sale=osconstruction.sale, scheduling=osconstruction.scheduling, signature_client=osconstruction.signature_client,
-                                              signature_emplooye=osconstruction.signature_emplooye, info=osconstruction.info, end_date=osconstruction.end_date)
+                                                checklist=osconstruction.checklist,
+                                                sale=osconstruction.sale, scheduling=osconstruction.scheduling, signature_client=osconstruction.signature_client,
+                                                signature_emplooye=osconstruction.signature_emplooye, info=osconstruction.info, end_date=osconstruction.end_date)
 
         session.add(new_os_construction)
         await session.commit()
@@ -61,7 +69,7 @@ async def register_os_construction(osconstruction: OsConstructionsCreate, depend
     
     except Exception as e:
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f'{e}')
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f'{e}')
     
 
 @token_employee_required
@@ -73,28 +81,38 @@ async def list_os_osconstructions(dependencies=Depends(JWTBearerEmployee()), ses
         result = await session.execute(query)
         osconstruction: List[OsConstructionsCreate] = result.scalars().all()
         return osconstruction
+    
     except Exception as e:
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f'{e}')
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f'{e}')
     
 
 @token_employee_required
 @async_session
 @router.get("/get-one-os-constructions", status_code=status.HTTP_200_OK)
 async def get_one_os_constructions(dependencies=Depends(JWTBearerEmployee()), os_construction_id: int = None, session: AsyncSession = Depends(conn.get_async_session)):
-    os_constructions_id = await session.execute(select(OsConstructions).where(OsConstructions.id == os_construction_id))
     try: 
-        if os_constructions_id:
-            obj_os_construction = os_constructions_id.scalar_one()
-            return obj_os_construction
+        os_constructions_id = await session.execute(select(OsConstructions).where(OsConstructions.id == os_construction_id))
+
+        if ForeignKeyViolation:
+            await session.rollback()
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se os dados são válidos'})
+        
+        obj_os_construction = os_constructions_id.scalar_one()
+        return obj_os_construction
+    
+    except NoResultFound:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={'error': 'Ordem de Serviço não encontrada'})
+    
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"{e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
     
     
 @token_employee_required
 @async_session
 @router.put('/update-os-constructions/{os_constructions_id}', responses={
-    200: {
+    201: {
         "description": "Ordem de Serviço para obra atualizada com sucesso",
         "content": {
             "application/json": {
@@ -120,62 +138,76 @@ async def get_one_os_constructions(dependencies=Depends(JWTBearerEmployee()), os
                 ]
             }
         },
-        404: {"description": "Insira dados válidos"}
+        404: {"description": "Não foi possível encontrar ordem de serviço"}
 }}, status_code=status.HTTP_202_ACCEPTED)
 async def update_os_construction(os_construction_id: int, os_construction_update: OsConstructionsUpdate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try:
+
         os = await session.execute(select(OsConstructions).where(OsConstructions.id == os_construction_id))
         existing_os = os.scalars().first()
 
-        if existing_os:
-            if os_construction_update.employee_id is not None:
-                existing_os.employee_id = os_construction_update.employee_id
-            else: 
-                existing_os.employee_id = existing_os.employee_id
-        
-            if os_construction_update.client_id is not None: 
-                existing_os.client_id = os_construction_update.client_id
-            else: 
-                existing_os.client_id = existing_os.client_id
+        if ForeignKeyViolation:
+            await session.rollback()
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se os dados são válidos'})
 
-            if os_construction_update.construction_id is not None:
-                existing_os.construction_id = os_construction_update.construction_id
-            else: 
-                existing_os.construction_id = existing_os.construction_id
-
-
-            existing_os.checklist = os_construction_update.checklist
-            existing_os.scheduling = os_construction_update.scheduling 
-            existing_os.end_date = os_construction_update.end_date
-            existing_os.info = os_construction_update.info
-            existing_os.sale = os_construction_update.sale
-            existing_os.signature_emplooye = os_construction_update.signature_emplooye
-            existing_os.signature_client = os_construction_update.signature_client
+        if os_construction_update.employee_id is not None:
+            existing_os.employee_id = os_construction_update.employee_id
+        else: 
+            existing_os.employee_id = existing_os.employee_id
     
-            await session.commit()
-            return existing_os
-        else:
-            return {"message": "Ordem de Serviço para obra não encontrada"}
+        if os_construction_update.client_id is not None: 
+            existing_os.client_id = os_construction_update.client_id
+        else: 
+            existing_os.client_id = existing_os.client_id
+
+        if os_construction_update.construction_id is not None:
+            existing_os.construction_id = os_construction_update.construction_id
+        else: 
+            existing_os.construction_id = existing_os.construction_id
+
+        existing_os.checklist = os_construction_update.checklist
+        existing_os.scheduling = os_construction_update.scheduling 
+        existing_os.end_date = os_construction_update.end_date
+        existing_os.info = os_construction_update.info
+        existing_os.sale = os_construction_update.sale
+        existing_os.signature_emplooye = os_construction_update.signature_emplooye
+        existing_os.signature_client = os_construction_update.signature_client
+
+        await session.commit()
+        return existing_os
+    
+    except NoResultFound:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={'error': 'Ordem de Serviço não encontrada'})
             
     except Exception as e:
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f"{e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
     
 
 @token_employee_required
 @async_session
 @router.delete("/delete-os-constructions", status_code=status.HTTP_200_OK)
 async def delete_os_constructions(os_constructions_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
-    constructions_id = await session.execute(select(OsConstructions).where(OsConstructions.id == os_constructions_id))
     try: 
-        if constructions_id:
-            obj_os_constructions = constructions_id.scalar_one()
-            await session.delete(obj_os_constructions)
-            await session.commit()
-            return {"message": "Ordem de Serviço deletada com sucesso"}
+        constructions_id = await session.execute(select(OsConstructions).where(OsConstructions.id == os_constructions_id))
+
+        if ForeignKeyViolation:
+            await session.rollback()
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se os dados são válidos'})
+        
+        obj_os_constructions = constructions_id.scalar_one()
+        await session.delete(obj_os_constructions)
+        await session.commit()
+        return {"message": "Ordem de Serviço deletada com sucesso"}
+    
+    except NoResultFound:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={'error': 'Ordem de Serviço não encontrada'})
+    
     except Exception as e:
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f"{e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
 
 
 @token_employee_required
@@ -196,4 +228,4 @@ async def create_upload_file(osconstruction_id: int, dependencies=Depends(JWTBea
 
     except Exception as e:
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f"{e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")

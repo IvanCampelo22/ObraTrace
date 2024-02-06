@@ -29,7 +29,7 @@ router = APIRouter()
 
  
 @router.post("/register", responses={
-    200: {
+    201: {
         "description": "Cliente cadastrado com sucesso",
         "content": {
             "application/json": {
@@ -42,7 +42,7 @@ router = APIRouter()
                 ]
             }
         },
-        404: {"description": "Insira dados válidos"}
+        400: {"description": "Insira dados válidos"}
 }}, status_code=status.HTTP_201_CREATED)
 async def register_user(client: ClientCreate, session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(Client).where(Client.email == client.email))
@@ -73,7 +73,7 @@ async def register_user(client: ClientCreate, session: AsyncSession = Depends(co
                 ]
             }
         },
-        404: {"description": "Insira dados válidos"}
+        400: {"description": "Insira dados válidos"}
 }}, response_model=TokenClientSchema)
 async def login(request: requestdetails, session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(Client).where(Client.email == request.email))
@@ -118,24 +118,25 @@ async def getusers(dependencies=Depends(JWTBearerClient()), db: AsyncSession = D
 @async_session
 @router.get("/get-one-client", status_code=status.HTTP_200_OK)
 async def get_one_client(client_id: int = None, dependencies=Depends(JWTBearerClient()), session: AsyncSession = Depends(conn.get_async_session)):
-    client = await session.execute(select(Client).where(Client.id == client_id))
     try: 
-        if client:
-            obj_adress = client.scalar_one()
-            return obj_adress
+
+        client = await session.execute(select(Client).where(Client.id == client_id))
+        obj_adress = client.scalar_one()
+        return obj_adress
     
     except NoResultFound:
         await session.rollback()
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'message': 'Cliente não encontrado'})
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={'message': 'Cliente não encontrado'})
+    
     except Exception as e:
         session.rollback()
-        raise HTTPException(status_code=500, detail=f"{e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
     
 
 @token_client_required
 @async_session
 @router.put('/update-client/{client_id}', responses={
-    200: {
+    201: {
         "description": "Cliente atualizado com sucesso",
         "content": {
             "application/json": {
@@ -150,40 +151,39 @@ async def get_one_client(client_id: int = None, dependencies=Depends(JWTBearerCl
             }
         },
         404: {"description": "Insira dados válidos"}
-}}, status_code=status.HTTP_202_ACCEPTED)
+}}, status_code=status.HTTP_201_CREATED)
 async def update_client(client_id: int, client_update: ClientUpdate, session: AsyncSession = Depends(conn.get_async_session)):
     try:
         client = await session.execute(select(Client).where(Client.id == client_id))
         existing_client = client.scalars().first()
 
-        if existing_client:
-            if client_update.username is not None:
-                existing_client.username = client_update.username
-            else: 
-                existing_client.username = existing_client.username
+        if client_update.username is not None:
+            existing_client.username = client_update.username
+        else: 
+            existing_client.username = existing_client.username
 
-            if client_update.email is not None:
-                existing_client.email = client_update.email
-            else: 
-                existing_client.email = existing_client.email                
+        if client_update.email is not None:
+            existing_client.email = client_update.email
+        else: 
+            existing_client.email = existing_client.email                
 
-            await session.commit()
-            return existing_client.id
-        else:
-            return {"message": "Cliente não encontrado"}
-    
+        await session.commit()
+        return existing_client.id
+        
     except NoResultFound:
         await session.rollback()
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'message': 'Cliente não encontrado'})
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={'message': 'Cliente não encontrado'})
+    
     except Exception as e:
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f"{e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
     
 
 @router.post('/change-password', status_code=status.HTTP_202_ACCEPTED)
 async def change_password(request: changepassword, session: AsyncSession = Depends(conn.get_async_session)):
     result = await session.execute(select(Client).where(Client.email == request.email))
     user = result.scalar()
+
     if user is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Client não encontrado")
     
@@ -239,36 +239,42 @@ async def logout(dependencies=Depends(JWTBearerClient()), session: AsyncSession 
 @async_session
 @router.get('/get-clients', status_code=status.HTTP_200_OK)
 async def list_users(is_activate: bool = None, is_deactivate: bool = None, dependencies=Depends(JWTBearerClient()), session: AsyncSession = Depends(conn.get_async_session)):
-    client_is_activate = await session.execute(select(Client).where(Client.is_active == True))
-    client_is_deactivate = await session.execute(select(Client).where(Client.is_active == False))
-    result = await session.execute(select(Client))
     try:
+        client_is_activate = await session.execute(select(Client).where(Client.is_active == True))
+        client_is_deactivate = await session.execute(select(Client).where(Client.is_active == False))
+        result = await session.execute(select(Client))
+
         if is_activate == True:
             return client_is_activate.scalar()
         elif is_deactivate == True:
             return client_is_deactivate.scalar()
         else: 
             return result.scalar()
+        
     except NoResultFound:
         await session.rollback()
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'message': 'Cliente não encontrado'})
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={'message': 'Cliente não encontrado'})
+    
     except Exception as e:
         await session.rollback()
-        HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
 
 
 @token_client_required
 @async_session
 @router.delete('/deactivate-client', status_code=status.HTTP_200_OK)
 async def deactivate_client(client_id: int = None, dependencies=Depends(JWTBearerClient()), session: AsyncSession = Depends(conn.get_async_session)):
-    client = await session.execute(select(Client).where(Client.id == client_id))
     try: 
-        if client:
-            obj_client = client.scalar_one()
-            obj_client.is_active = False
-            return {"message": "cliente desativado"}
+        client = await session.execute(select(Client).where(Client.id == client_id))
+        obj_client = client.scalar_one()
+        obj_client.is_active = False
+
+        return {"message": "cliente desativado"}
+    
     except NoResultFound:
         await session.rollback()
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'message': 'Cliente não encontrado'})    
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={'message': 'Cliente não encontrado'})    
+    
     except Exception as e:
-        HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")

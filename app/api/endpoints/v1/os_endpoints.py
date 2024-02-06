@@ -3,6 +3,9 @@ from fastapi import APIRouter, File, UploadFile, Depends, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
+from sqlalchemy.orm.exc import NoResultFound
+
+from psycopg2.errors import ForeignKeyViolation
 from typing import List
 
 from app.schemas.os_schemas import OsCreate, OsUpdate
@@ -44,19 +47,25 @@ router = APIRouter()
         404: {"description": "Insira dados válidos"}
 }}, status_code=status.HTTP_201_CREATED)
 async def register_os_(os: OsCreate, session: AsyncSession = Depends(conn.get_async_session)):
-    result = await session.execute(select(Os).where(Os.client_id == os.client_id, Os.employee_id == os.employee_id, 
-                                                                 Os.client_adress_id == os.client_adress_id, Os.os_type == os.os_type, Os.checklist == os.checklist,
-                                                                 Os.sale == os.sale, Os.scheduling == os.scheduling, Os.signature_client == os.signature_client,
-                                                                 Os.signature_emplooye == os.signature_emplooye, Os.solution == os.solution, Os.info == os.info,
-                                                                 Os.end_date == os.end_date))
-    existing_os_construction = result.scalar()
-    if existing_os_construction: 
-        raise HTTPException(status_code=400, detail="Já temos essa ordem de serviço registrada")
-    
-    try: 
+    try:
+        result = await session.execute(select(Os).where(Os.client_id == os.client_id, Os.employee_id == os.employee_id, 
+                                                                    Os.client_adress_id == os.client_adress_id, Os.os_type == os.os_type, Os.checklist == os.checklist,
+                                                                    Os.sale == os.sale, Os.scheduling == os.scheduling, Os.signature_client == os.signature_client,
+                                                                    Os.signature_emplooye == os.signature_emplooye, Os.solution == os.solution, Os.info == os.info,
+                                                                    Os.end_date == os.end_date))
+        existing_os_construction = result.scalar()
+
+        if existing_os_construction: 
+            await session.rollback()
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Já temos essa ordem de serviço registrada")
+        
+        if ForeignKeyViolation:
+            await session.rollback()
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se os dados são válidos'})
+        
         new_os = Os(client_id=os.client_id, employee_id=os.employee_id, client_adress_id=os.client_adress_id, os_type=os.os_type,
-                                              checklist=os.checklist, sale=os.sale, scheduling=os.scheduling, signature_client=os.signature_client,
-                                              signature_emplooye=os.signature_emplooye, solution=os.solution, info=os.info, end_date=os.end_date)
+                                                checklist=os.checklist, sale=os.sale, scheduling=os.scheduling, signature_client=os.signature_client,
+                                                signature_emplooye=os.signature_emplooye, solution=os.solution, info=os.info, end_date=os.end_date)
 
         session.add(new_os)
         await session.commit()
@@ -65,7 +74,7 @@ async def register_os_(os: OsCreate, session: AsyncSession = Depends(conn.get_as
     
     except Exception as e:
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f'{e}')
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f'{e}')
     
 
 @token_employee_required
@@ -77,10 +86,11 @@ async def list_os(dependencies=Depends(JWTBearerEmployee()), session: AsyncSessi
         result = await session.execute(query)
         result = result.unique()
         os: List[OsCreate] = result.scalars().all()
+
         return os
     except Exception as e:
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f'{e}')
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f'{e}')
     
 
 @token_employee_required
@@ -90,12 +100,16 @@ async def get_one_os(dependencies=Depends(JWTBearerEmployee()), os_id: int = Non
     try: 
         os = await session.execute(select(Os).where(Os.id == os_id).options(joinedload(Os.client)).options(joinedload(Os.client_adress)))                   
         os = os.unique()
+        obj_construction = os.scalar_one()
 
-        if os_id:
-            obj_construction = os.scalar_one()
-            return obj_construction
+        return obj_construction
+    
+    except NoResultFound:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'error': 'Ordem de serviço não encontrada'}) 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"{e}")
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
     
     
 @token_employee_required
@@ -134,46 +148,51 @@ async def update_os(os_id: int, os_update: OsUpdate, dependencies=Depends(JWTBea
         os = await session.execute(select(Os).where(Os.id == os_id))
         existing_os = os.scalars().first()
 
-        if existing_os:
-            if os_update.employee_id is not None:
-                existing_os.employee_id = os_update.employee_id
-            else: 
-                existing_os.employee_id = existing_os.employee_id
-        
-            if os_update.client_id is not None: 
-                existing_os.client_id = os_update.client_id
-            else: 
-                existing_os.client_id = existing_os.client_id
+        if ForeignKeyViolation:
+            await session.rollback()
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se os dados são válidos'})
 
-            if os_update.client_adress_id is not None:
-                existing_os.client_adress_id = os_update.client_adress_id
-            else: 
-                existing_os.client_adress_id = existing_os.client_adress_id
-
-            if os_update.os_type is not None: 
-                existing_os.os_type = os_update.os_type
-            else:
-                existing_os.os_type = existing_os.os_type
-
-
-            existing_os.checklist = os_update.checklist
-            existing_os.scheduling = os_update.scheduling 
-            existing_os.end_date = os_update.end_date
-            existing_os.solution = os_update.solution
-            existing_os.info = os_update.info
-            existing_os.sale = os_update.sale
-            existing_os.signature_emplooye = os_update.signature_emplooye
-            existing_os.signature_client = os_update.signature_client
-            existing_os.is_active = os_update.is_active
+        if os_update.employee_id is not None:
+            existing_os.employee_id = os_update.employee_id
+        else: 
+            existing_os.employee_id = existing_os.employee_id
     
-            await session.commit()
-            return existing_os
+        if os_update.client_id is not None: 
+            existing_os.client_id = os_update.client_id
+        else: 
+            existing_os.client_id = existing_os.client_id
+
+        if os_update.client_adress_id is not None:
+            existing_os.client_adress_id = os_update.client_adress_id
+        else: 
+            existing_os.client_adress_id = existing_os.client_adress_id
+
+        if os_update.os_type is not None: 
+            existing_os.os_type = os_update.os_type
         else:
-            return {"message": "Ordem de Serviço não encontrada"}
-            
+            existing_os.os_type = existing_os.os_type
+
+
+        existing_os.checklist = os_update.checklist
+        existing_os.scheduling = os_update.scheduling 
+        existing_os.end_date = os_update.end_date
+        existing_os.solution = os_update.solution
+        existing_os.info = os_update.info
+        existing_os.sale = os_update.sale
+        existing_os.signature_emplooye = os_update.signature_emplooye
+        existing_os.signature_client = os_update.signature_client
+        existing_os.is_active = os_update.is_active
+
+        await session.commit()
+        return existing_os
+        
+    except NoResultFound:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'error': 'Ordem de Serviço não encontrada'}) 
+    
     except Exception as e:
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f"{e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
     
 
 @token_employee_required
@@ -182,13 +201,18 @@ async def update_os(os_id: int, os_update: OsUpdate, dependencies=Depends(JWTBea
 async def delete_os(os__id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     os_id = await session.execute(select(Os).where(Os.id == os__id))
     try: 
-        if os_id:
-            obj_os = os_id.scalar_one()
-            await session.delete(obj_os)
-            await session.commit()
-            return os_id
+        obj_os = os_id.scalar_one()
+        await session.delete(obj_os)
+        await session.commit()
+        return os_id
+    
+    except NoResultFound:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'error': 'Ordem de Serviço não encontrada'}) 
+    
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"{e}")
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
 
 
 @token_employee_required
