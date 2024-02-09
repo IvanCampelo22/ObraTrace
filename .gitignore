@@ -6,6 +6,7 @@ __pycache__
 db.sqlite3
 media
 
+media/
 
 # Jupyter Notebook 
 .ipynb_checkpoints 
@@ -90,6 +91,7 @@ coverage.xml
 # Environments 
 .env 
 .venv 
+venv
 env/ 
 venv/ 
 ENV/ 
@@ -128,5 +130,5 @@ venv/
 *.jpg
 *.jpeg
 
-.env
-
+logs/
+*.logs
