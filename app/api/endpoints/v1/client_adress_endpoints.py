@@ -146,10 +146,6 @@ async def update_client_adress(client_adress_id: int, clientadress: ClientAdress
             await session.rollback()
             return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Insira dados válidos no campo state'})
 
-        if ForeignKeyViolation:
-            await session.rollback()
-            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se o cliente e o funcionário estão cadastrados'})
-
         if clientadress.employee_id is not None:
             existing_adress.employee_id = clientadress.employee_id
         else: 
