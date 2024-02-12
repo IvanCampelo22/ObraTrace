@@ -120,10 +120,6 @@ async def get_one_employee(employee_id: int = None, dependencies=Depends(JWTBear
     try: 
         employee = await session.execute(select(Employees).where(Employees.id == employee_id))
         
-        if ForeignKeyViolation:
-            await session.rollback()
-            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se os dados são válidos'})
-        
         obj_adress = employee.scalar_one()
         return obj_adress
         
@@ -159,10 +155,6 @@ async def update_employee(employee_id: int, employee_update: EmployeeUpdate, ses
     try:
         employee = await session.execute(select(Employees).where(Employees.id == employee_id))
         existing_employee = employee.scalars().first()
-
-        if ForeignKeyViolation:
-            await session.rollback()
-            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se os dados são válidos'})
 
         if employee_update.username is not None:
             existing_employee.username = employee_update.username

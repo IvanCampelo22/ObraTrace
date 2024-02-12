@@ -42,10 +42,6 @@ async def register_construction(construction: ConstructionCreate, dependencies=D
     try:  
         result = await session.execute(select(Constructions).where(Constructions.client_id == construction.client_id, Constructions.employee_id == construction.employee_id, Constructions.client_adress_id == construction.client_adress_id))
         existing_adress = result.scalar()
-
-        if ForeignKeyViolation:
-            await session.rollback()
-            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se os dados são válidos'})
         
         if existing_adress:
             await session.rollback() 
@@ -110,10 +106,6 @@ async def update_construction(construction_id: int, construction: ConstructionUp
     try:
         constructions = await session.execute(select(Constructions).where(Constructions.id == construction_id))
         existing_construction = constructions.scalars().first()
-
-        if ForeignKeyViolation:
-            await session.rollback()
-            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se os dados são válidos'})
 
         if existing_construction:
             existing_construction.is_done = construction.is_done

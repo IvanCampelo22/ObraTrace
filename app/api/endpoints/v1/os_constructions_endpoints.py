@@ -53,9 +53,6 @@ async def register_os_construction(osconstruction: OsConstructionsCreate, depend
         if existing_os_construction: 
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Já temos essa ordem de serviço registrada")
         
-        if ForeignKeyViolation:
-            await session.rollback()
-            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se os dados são válidos'})
         
         new_os_construction = OsConstructions(client_id=osconstruction.client_id, employee_id=osconstruction.employee_id, construction_id=osconstruction.construction_id, 
                                                 checklist=osconstruction.checklist,
@@ -94,10 +91,6 @@ async def get_one_os_constructions(dependencies=Depends(JWTBearerEmployee()), os
     try: 
         os_constructions_id = await session.execute(select(OsConstructions).where(OsConstructions.id == os_construction_id))
 
-        if ForeignKeyViolation:
-            await session.rollback()
-            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se os dados são válidos'})
-        
         obj_os_construction = os_constructions_id.scalar_one()
         return obj_os_construction
     
@@ -146,10 +139,6 @@ async def update_os_construction(os_construction_id: int, os_construction_update
         os = await session.execute(select(OsConstructions).where(OsConstructions.id == os_construction_id))
         existing_os = os.scalars().first()
 
-        if ForeignKeyViolation:
-            await session.rollback()
-            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se os dados são válidos'})
-
         if os_construction_update.employee_id is not None:
             existing_os.employee_id = os_construction_update.employee_id
         else: 
@@ -191,10 +180,6 @@ async def update_os_construction(os_construction_id: int, os_construction_update
 async def delete_os_constructions(os_constructions_id: int = None, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try: 
         constructions_id = await session.execute(select(OsConstructions).where(OsConstructions.id == os_constructions_id))
-
-        if ForeignKeyViolation:
-            await session.rollback()
-            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se os dados são válidos'})
         
         obj_os_constructions = constructions_id.scalar_one()
         await session.delete(obj_os_constructions)

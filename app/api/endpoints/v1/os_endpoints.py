@@ -59,9 +59,6 @@ async def register_os_(os: OsCreate, session: AsyncSession = Depends(conn.get_as
             await session.rollback()
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Já temos essa ordem de serviço registrada")
         
-        if ForeignKeyViolation:
-            await session.rollback()
-            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se os dados são válidos'})
         
         new_os = Os(client_id=os.client_id, employee_id=os.employee_id, client_adress_id=os.client_adress_id, os_type=os.os_type,
                                                 checklist=os.checklist, sale=os.sale, scheduling=os.scheduling, signature_client=os.signature_client,
@@ -147,10 +144,6 @@ async def update_os(os_id: int, os_update: OsUpdate, dependencies=Depends(JWTBea
     try:
         os = await session.execute(select(Os).where(Os.id == os_id))
         existing_os = os.scalars().first()
-
-        if ForeignKeyViolation:
-            await session.rollback()
-            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Verifique se os dados são válidos'})
 
         if os_update.employee_id is not None:
             existing_os.employee_id = os_update.employee_id
