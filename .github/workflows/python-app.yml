@@ -11,6 +11,10 @@ env:
   PASSWORD_OS: ${{ vars.PASSWORD_OS }}
   HOST_OS: ${{ vars.HOST_OS}}
   NAME_OS: ${{ vars.NAME_OS }}
+  TOKEN_SUPABASE: ${{ vars.TOKEN_SUPABASE }}
+  SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+  SUPABASE_KEY: ${{ vars.SUPABASE_KEY }}
+
   
 permissions:
   contents: read

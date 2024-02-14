@@ -4,7 +4,6 @@ from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import NoResultFound
 
-from psycopg2.errors import ForeignKeyViolation
 from typing import List
 
 
@@ -13,7 +12,15 @@ from app.models.os_constructions_models import OsConstructions
 from app.auth.auth_bearer_employee import JWTBearerEmployee
 from app.auth.auth_handle import token_employee_required
 from database import conn
+import os
+import threading
 from database.conn import async_session
+from supabase import Client, create_client
+
+url: str = os.environ.get('SUPABASE_URL')
+key: str = os.environ.get('SUPABASE_KEY')
+supabase: Client = create_client(url, key)
+
 
 
 router = APIRouter()
@@ -197,20 +204,29 @@ async def delete_os_constructions(os_constructions_id: int = None, dependencies=
 
 @token_employee_required
 @async_session
-@router.post("/uploadfile/", status_code=status.HTTP_200_OK)
-async def create_upload_file(osconstruction_id: int, dependencies=Depends(JWTBearerEmployee()), file: UploadFile = File(...), session: AsyncSession = Depends(conn.get_async_session)):
-    os = await session.execute(select(OsConstructions).where(OsConstructions.id == osconstruction_id))
-    existing_os = os.scalars().first()
+@router.post("/uploadfile/", status_code=status.HTTP_201_CREATED)
+async def create_upload_file(os_id: int, file: UploadFile, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try:
-        file_location = f"/home/ivan/Projects/homelabs/backend-homelabs-app{file.filename}"
-        with open(file_location, "wb+") as file_object:
-            file_object.write(file.file.read())
+        os = await session.execute(select(OsConstructions).where(OsConstructions.id == os_id))
+        existing_os = os.scalars().first()
 
-        existing_os.image = file_location
-        await session.commit()
+        file_path = await file.read()
+
+        def upload():
+            supabase.storage.from_('files').upload(file=file_path, path=file.filename, file_options={"content-type": "image/png"})
         
-        return existing_os.image
+        thread = threading.Thread(target=upload)
+        thread.start()
+        thread.join(3)
+        
+        file_url = supabase.storage.from_('files').get_public_url(file.filename)
+
+        existing_os.image = file_url
+        await session.commit()
+
+        return {'message': 'upload de imagem realizado com sucesso'}
 
     except Exception as e:
         await session.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
+    

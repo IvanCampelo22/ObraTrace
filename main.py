@@ -4,8 +4,14 @@ from loguru import logger
 import sys
 from fastapi import FastAPI
 from app.api.routes import api_router
+import os
 from fastapi.middleware.cors import CORSMiddleware
 
+from supabase import Client, create_client
+
+url: str = os.environ.get('SUPABASE_URL')
+key: str = os.environ.get('SUPABASE_KEY')
+supabase: Client = create_client(url, key)
 
 app = FastAPI(title='Ordem De Serviço')
 app.include_router(api_router)
