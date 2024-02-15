@@ -46,8 +46,13 @@ async def register_construction(construction: ConstructionCreate, dependencies=D
         if existing_adress:
             await session.rollback() 
             return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Já temos essa obra registrada")                 
-        
+
         new_adress = Constructions(client_id=construction.client_id, employee_id=construction.employee_id, client_adress_id=construction.client_adress_id)
+        
+        if not new_adress.client_id or not new_adress.employee_id or not new_adress.client_adress_id: 
+            await session.rollback()
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Insira dados válidos")
+        
         session.add(new_adress)
         await session.commit()
 
@@ -107,10 +112,14 @@ async def update_construction(construction_id: int, construction: ConstructionUp
         constructions = await session.execute(select(Constructions).where(Constructions.id == construction_id))
         existing_construction = constructions.scalars().first()
 
-        if existing_construction:
-            existing_construction.is_done = construction.is_done
-            await session.commit()
-            return existing_construction
+        existing_construction.is_done = construction.is_done
+
+        if not existing_construction.client_id or not existing_construction.employee_id or not existing_construction.client_adress_id: 
+            await session.rollback()
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Insira dados válidos")
+
+        await session.commit()
+        return existing_construction
         
     except NoResultFound:
         await session.rollback()

@@ -7,8 +7,6 @@ from sqlalchemy.future import select
 from jose import jwt
 from datetime import datetime
 from typing import List
-from psycopg2.errors import ForeignKeyViolation
-
 
 from app.schemas.employee_schemas import EmployeeCreate, EmployeeUpdate, TokenEmployeeSchema, requestdetails, changepassword
 from app.models.employees_models import Employees, TokenTableEmployees

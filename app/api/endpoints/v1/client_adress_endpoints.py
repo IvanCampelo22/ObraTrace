@@ -48,6 +48,10 @@ async def register_client_adress(adress: ClientAdressCreate, dependencies=Depend
             return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'Insira dados válidos no campo state'})
 
 
+        if not new_adress.client_id or not new_adress.employee_id: 
+            await session.rollback()
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Insira dados válidos")
+
         session.add(new_adress)
         await session.commit()
 
@@ -185,10 +189,13 @@ async def update_client_adress(client_adress_id: int, clientadress: ClientAdress
         existing_adress.reference_point = clientadress.reference_point 
         existing_adress.complement = clientadress.complement
 
+        if not existing_adress.client_id or not existing_adress.employee_id: 
+            await session.rollback()
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Insira dados válidos")
+
         await session.commit()
         return existing_adress
         
-    
     except NoResultFound:
         await session.rollback()
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={'error': 'Endereço não encontrado'})

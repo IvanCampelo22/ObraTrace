@@ -66,6 +66,12 @@ async def register_os_construction(osconstruction: OsConstructionsCreate, depend
                                                 sale=osconstruction.sale, scheduling=osconstruction.scheduling, signature_client=osconstruction.signature_client,
                                                 signature_emplooye=osconstruction.signature_emplooye, info=osconstruction.info, end_date=osconstruction.end_date)
 
+
+        if not new_os_construction.client_id or not new_os_construction.construction_id or not new_os_construction.employee_id: 
+            await session.rollback()
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Insira dados válidos")
+
+
         session.add(new_os_construction)
         await session.commit()
 
@@ -168,6 +174,10 @@ async def update_os_construction(os_construction_id: int, os_construction_update
         existing_os.sale = os_construction_update.sale
         existing_os.signature_emplooye = os_construction_update.signature_emplooye
         existing_os.signature_client = os_construction_update.signature_client
+
+        if not existing_os.client_id or not existing_os.construction_id or not existing_os.employee_id: 
+            await session.rollback()
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Insira dados válidos")
 
         await session.commit()
         return existing_os

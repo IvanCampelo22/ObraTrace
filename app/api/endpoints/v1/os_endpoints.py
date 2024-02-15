@@ -60,14 +60,19 @@ async def register_os_(os: OsCreate, session: AsyncSession = Depends(conn.get_as
                                                                     Os.end_date == os.end_date))
         existing_os_construction = result.scalar()
 
+
         if existing_os_construction: 
             await session.rollback()
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Já temos essa ordem de serviço registrada")
+            return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Já temos essa ordem de serviço registrada")
         
         
         new_os = Os(client_id=os.client_id, employee_id=os.employee_id, client_adress_id=os.client_adress_id, os_type=os.os_type,
                                                 checklist=os.checklist, sale=os.sale, scheduling=os.scheduling, signature_client=os.signature_client,
                                                 signature_emplooye=os.signature_emplooye, solution=os.solution, info=os.info, end_date=os.end_date)
+
+        if not new_os.client_id or not new_os.client_adress_id or not new_os.employee_id: 
+            await session.rollback()
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Insira dados válidos")
 
         session.add(new_os)
         await session.commit()
@@ -144,7 +149,7 @@ async def get_one_os(dependencies=Depends(JWTBearerEmployee()), os_id: int = Non
             }
         },
         404: {"description": "Insira dados válidos"}
-}}, status_code=status.HTTP_202_ACCEPTED)
+}}, status_code=status.HTTP_201_CREATED)
 async def update_os(os_id: int, os_update: OsUpdate, dependencies=Depends(JWTBearerEmployee()), session: AsyncSession = Depends(conn.get_async_session)):
     try:
         os = await session.execute(select(Os).where(Os.id == os_id))
@@ -180,6 +185,10 @@ async def update_os(os_id: int, os_update: OsUpdate, dependencies=Depends(JWTBea
         existing_os.signature_emplooye = os_update.signature_emplooye
         existing_os.signature_client = os_update.signature_client
         existing_os.is_active = os_update.is_active
+
+        if not existing_os.client_id or not existing_os.client_adress_id or not existing_os.employee_id: 
+            await session.rollback()
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Insira dados válidos")
 
         await session.commit()
         return existing_os
